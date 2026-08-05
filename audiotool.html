@@ -1,0 +1,2621 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Audio Profesional</title>
+	<link href="img/logo.png" rel="icon">
+	
+    <!-- Tailwind CSS for modern styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- LameJS for MP3 Encoding -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 h-full flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+    <header class="bg-slate-800/80 backdrop-blur-md border-b border-slate-700/60 sticky top-0 z-50 px-6 py-4 flex items-center justify-between shadow-lg">
+        <div class="flex items-center space-x-3">
+            <div class="bg-gradient-to-tr from-indigo-500 to-violet-500 p-2.5 rounded-xl shadow-md shadow-indigo-500/20">
+                <i class="fa-solid fa-photo-film text-white text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight text-white">AudioStudio Pro</h1>
+                <p class="text-xs text-slate-400">Potong, bagi, dan gabungkan file audio dengan mudah</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-2 text-sm text-slate-400 bg-slate-700/50 px-3 py-1.5 rounded-lg border border-slate-600/50 hidden sm:flex">
+            <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+            <span>100% Client-Side</span>
+        </div>
+    </header>
+
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6 overflow-y-auto">
+        
+        <!-- Tabs Navigation -->
+        <div class="flex justify-center mb-2">
+            <div class="bg-slate-800/80 p-1.5 rounded-2xl flex flex-wrap justify-center gap-1 border border-slate-700/60 shadow-lg backdrop-blur-sm">
+                <button id="tab-splitter-btn" class="px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-medium shadow-md transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-scissors"></i>
+                    <span class="hidden sm:inline">Pemotong Audio</span>
+                    <span class="sm:hidden">Potong</span>
+                </button>
+                <button id="tab-joiner-btn" class="px-6 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 font-medium hover:bg-slate-700/50 transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span class="hidden sm:inline">Penggabung Audio</span>
+                    <span class="sm:hidden">Gabung</span>
+                </button>
+                <button id="tab-converter-btn" class="px-6 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 font-medium hover:bg-slate-700/50 transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                    <span class="hidden sm:inline">Konverter Audio</span>
+                    <span class="sm:hidden">Konversi</span>
+                </button>
+                <button id="tab-speed-btn" class="px-6 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 font-medium hover:bg-slate-700/50 transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-bolt"></i>
+                    <span class="hidden sm:inline">Pengubah Kecepatan</span>
+                    <span class="sm:hidden">Speed</span>
+                </button>
+                <button id="tab-effects-btn" class="px-6 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 font-medium hover:bg-slate-700/50 transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                    <span class="hidden sm:inline">Efek Studio</span>
+                    <span class="sm:hidden">Efek</span>
+                </button>
+                <button id="tab-karaoke-btn" class="px-6 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 font-medium hover:bg-slate-700/50 transition-all flex items-center space-x-2">
+                    <i class="fa-solid fa-microphone-lines"></i>
+                    <span class="hidden sm:inline">Karaoke Maker</span>
+                    <span class="sm:hidden">Karaoke</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- SPLITTER VIEW -->
+        <div id="splitter-view" class="flex flex-col gap-6 w-full">
+        
+        <!-- Upload Card -->
+        <div id="upload-card" class="bg-slate-800/70 backdrop-blur-sm border-2 border-dashed border-slate-600 hover:border-indigo-500/80 transition-all rounded-3xl p-8 sm:p-12 text-center flex flex-col items-center justify-center cursor-pointer shadow-xl relative group">
+            <input type="file" id="audio-file-input" accept="audio/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+            <div class="w-20 h-20 bg-indigo-500/10 group-hover:bg-indigo-500/20 text-indigo-400 rounded-2xl flex items-center justify-center text-3xl mb-4 transition-transform group-hover:scale-110 shadow-inner">
+                <i class="fa-solid fa-cloud-arrow-up"></i>
+            </div>
+            <h2 class="text-xl font-semibold text-white mb-2">Seret & Letakkan file audio di sini</h2>
+            <p class="text-sm text-slate-400 max-w-md mb-6">Mendukung format MP3, WAV, OGG, M4A, dan lainnya. Berkas diproses langsung di browser Anda.</p>
+            <button class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-6 py-3 rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center space-x-2 pointer-events-none">
+                <i class="fa-solid fa-folder-open"></i>
+                <span>Pilih File Audio</span>
+            </button>
+        </div>
+
+        <div id="editor-container" class="hidden flex flex-col gap-6">
+            
+            <!-- File Info & Control Bar -->
+            <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center space-x-4 w-full md:w-auto">
+                    <div class="w-12 h-12 rounded-xl bg-violet-600/20 text-violet-400 flex items-center justify-center text-xl shrink-0">
+                        <i class="fa-solid fa-file-audio"></i>
+                    </div>
+                    <div class="overflow-hidden">
+                        <h3 id="file-name" class="font-semibold text-white truncate max-w-xs sm:max-w-md">nama_file.mp3</h3>
+                        <p id="file-meta" class="text-xs text-slate-400">Durasi: 00:00 | Ukuran: 0 MB</p>
+                    </div>
+                </div>
+
+                <!-- Playback controls -->
+                <div class="flex items-center space-x-3 w-full md:w-auto justify-end">
+                    <button id="play-pause-btn" class="bg-indigo-600 hover:bg-indigo-500 text-white w-11 h-11 rounded-xl flex items-center justify-center shadow-md shadow-indigo-600/30 transition-all">
+                        <i class="fa-solid fa-play" id="play-icon"></i>
+                    </button>
+                    <button id="stop-btn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 w-11 h-11 rounded-xl flex items-center justify-center transition-all">
+                        <i class="fa-solid fa-stop"></i>
+                    </button>
+                    <button id="reset-file-btn" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>Ganti File</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Waveform & Time Visualizer -->
+            <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-lg flex flex-col gap-4">
+                <div class="flex items-center justify-between">
+                    <h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
+                        <i class="fa-solid fa-wave-square text-indigo-400"></i>
+                        <span>Visualisasi & Titik Potong</span>
+                    </h4>
+                    <div class="text-xs font-mono text-indigo-300 bg-indigo-500/10 px-2.5 py-1 rounded-lg border border-indigo-500/20">
+                        <span id="current-time-display">00:00</span> / <span id="total-time-display">00:00</span>
+                    </div>
+                </div>
+
+                <!-- Canvas Waveform container -->
+                <div class="relative w-full h-32 bg-slate-950/60 rounded-xl overflow-hidden border border-slate-700/50">
+                    <canvas id="waveform-canvas" class="w-full h-full block cursor-pointer"></canvas>
+                    <div id="playback-cursor" class="absolute top-0 bottom-0 w-0.5 bg-rose-500 pointer-events-none transition-all duration-75" style="left: 0%;"></div>
+                </div>
+                <p class="text-xs text-slate-400 text-center">Klik pada gelombang audio untuk melompat ke posisi tertentu.</p>
+            </div>
+
+            <!-- Split Configuration Card -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                <!-- Settings Panel -->
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-lg flex flex-col gap-5">
+                    <h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
+                        <i class="fa-solid fa-sliders text-indigo-400"></i>
+                        <span>Pengaturan Potongan</span>
+                    </h4>
+
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm text-slate-300 font-medium">Metode Pemotongan</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="mode-interval-btn" class="bg-indigo-600 text-white py-2.5 px-3 rounded-xl text-sm font-medium border border-indigo-500 transition-all shadow-sm">
+                                Per Durasi Menit
+                            </button>
+                            <button id="mode-manual-btn" class="bg-slate-700 hover:bg-slate-600 text-slate-300 py-2.5 px-3 rounded-xl text-sm font-medium border border-slate-600 transition-all">
+                                Manual / Custom
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Interval mode container -->
+                    <div id="interval-settings" class="flex flex-col gap-4">
+                        <div class="flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <label for="split-duration-input" class="text-sm text-slate-300 font-medium">Panjang Setiap Bagian</label>
+                                <span class="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded" id="duration-label">5 Menit</span>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <input type="number" id="split-duration-input" min="0.1" max="120" step="0.5" value="5" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-medium w-full focus:outline-none focus:border-indigo-500">
+                                <select id="time-unit-select" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-medium focus:outline-none focus:border-indigo-500">
+                                    <option value="minutes" selected>Menit</option>
+                                    <option value="seconds">Detik</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="bg-slate-900/50 p-3.5 rounded-xl border border-slate-700/50 text-xs text-slate-400 flex items-start space-x-2.5">
+                            <i class="fa-solid fa-circle-info text-indigo-400 mt-0.5"></i>
+                            <span id="preview-split-count">File akan otomatis dibagi menjadi beberapa bagian sesuai durasi di atas.</span>
+                        </div>
+                    </div>
+
+                    <!-- Manual mode container (Hidden initially) -->
+                    <div id="manual-settings" class="hidden flex flex-col gap-4">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-xs text-slate-400 mb-1 block">Mulai (Detik)</label>
+                                <input type="number" id="manual-start" min="0" value="0" step="0.1" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm w-full focus:outline-none focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="text-xs text-slate-400 mb-1 block">Selesai (Detik)</label>
+                                <input type="number" id="manual-end" min="0" value="60" step="0.1" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm w-full focus:outline-none focus:border-indigo-500">
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-400">Atau gunakan tombol di bawah untuk menetapkan rentang saat memutar audio.</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="set-start-btn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs py-2 rounded-lg font-medium transition-all">Set Mulai di Posisi Ini</button>
+                            <button id="set-end-btn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs py-2 rounded-lg font-medium transition-all">Set Selesai di Posisi Ini</button>
+                        </div>
+                    </div>
+
+                    <!-- Output Format Selector -->
+                    <div class="flex flex-col gap-2 border-t border-slate-700/50 pt-4 mt-1">
+                        <label class="text-sm text-slate-300 font-medium">Format Output (Hasil Export)</label>
+                        <select id="output-format-select" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-medium focus:outline-none focus:border-indigo-500 w-full transition-all">
+                            <option value="mp3" selected>MP3 (Ukuran Kecil, Cepat)</option>
+                            <option value="wav">WAV (Kualitas Tinggi, Cepat)</option>
+                            <option value="ogg">OGG (Real-time Encoding)</option>
+                            <option value="m4a">M4A (Real-time Encoding)</option>
+                        </select>
+                        <div id="format-warning" class="hidden bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-lg flex items-start space-x-2 text-xs text-amber-400 mt-1">
+                            <i class="fa-solid fa-triangle-exclamation mt-0.5"></i>
+                            <p>Format ini membutuhkan waktu pemrosesan <strong>sama dengan durasi audio</strong> (Real-time) karena menggunakan perekaman ulang dari browser.</p>
+                        </div>
+                    </div>
+
+                    <button id="generate-segments-btn" class="w-full bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold py-3.5 px-4 rounded-xl shadow-lg shadow-indigo-600/30 transition-all flex items-center justify-center space-x-2 mt-2">
+                        <i class="fa-solid fa-scissors"></i>
+                        <span>Proses & Bagi Audio</span>
+                    </button>
+                </div>
+
+                <!-- Segments Result List -->
+                <div class="lg:col-span-2 bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-lg flex flex-col gap-4">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
+                            <i class="fa-solid fa-list-check text-indigo-400"></i>
+                            <span>Daftar Potongan Hasil (<span id="segment-count-badge">0</span>)</span>
+                        </h4>
+                        <button id="download-all-btn" class="hidden bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-3.5 py-2 rounded-xl transition-all shadow-md shadow-emerald-600/20 flex items-center space-x-1.5">
+                            <i class="fa-solid fa-download"></i>
+                            <span>Unduh Semua (ZIP/Bulk)</span>
+                        </button>
+                    </div>
+
+                    <!-- Segments Scroll Area -->
+                    <div id="segments-list-container" class="flex-1 min-h-[260px] max-h-[380px] overflow-y-auto flex flex-col gap-3 pr-1">
+                        <div class="h-full flex flex-col items-center justify-center text-center p-8 text-slate-500 border border-dashed border-slate-700/50 rounded-xl">
+                            <i class="fa-solid fa-scissors text-3xl mb-2 opacity-50"></i>
+                            <p class="text-sm">Klik tombol "Proses & Bagi Audio" untuk menghasilkan potongan audio sesuai pengaturan.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+        </div> <!-- End Splitter View -->
+
+        <!-- JOINER VIEW (Hidden by default) -->
+        <div id="joiner-view" class="hidden flex flex-col gap-6 w-full">
+            <!-- Joiner Upload -->
+            <div id="joiner-upload-card" class="bg-slate-800/70 backdrop-blur-sm border-2 border-dashed border-slate-600 hover:border-emerald-500/80 transition-all rounded-3xl p-8 text-center flex flex-col items-center justify-center cursor-pointer shadow-xl relative group min-h-[200px]">
+                <input type="file" id="joiner-file-input" accept="audio/*" multiple class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                <div class="w-16 h-16 bg-emerald-500/10 group-hover:bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center text-2xl mb-3 transition-transform group-hover:scale-110 shadow-inner">
+                    <i class="fa-solid fa-plus"></i>
+                </div>
+                <h2 class="text-lg font-semibold text-white mb-1">Tambah Beberapa File Audio</h2>
+                <p class="text-xs text-slate-400 max-w-md">Klik di sini dan pilih beberapa file sekaligus untuk digabungkan menjadi satu trek.</p>
+            </div>
+
+            <!-- Joiner Editor -->
+            <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-lg flex flex-col gap-4">
+                <div class="flex items-center justify-between border-b border-slate-700/50 pb-4">
+                    <h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
+                        <i class="fa-solid fa-list-ol text-emerald-400"></i>
+                        <span>Urutan File Gabungan</span>
+                    </h4>
+                    <div class="text-xs font-mono text-emerald-300 bg-emerald-500/10 px-2.5 py-1 rounded-lg border border-emerald-500/20">
+                        Total Durasi: <span id="joiner-total-time">00:00</span>
+                    </div>
+                </div>
+
+                <div id="joiner-list-container" class="flex flex-col gap-3 min-h-[150px] max-h-[400px] overflow-y-auto pr-2">
+                    <div class="h-full flex flex-col items-center justify-center text-center p-6 text-slate-500 border border-dashed border-slate-700/50 rounded-xl">
+                        <i class="fa-solid fa-music text-2xl mb-2 opacity-50"></i>
+                        <p class="text-sm">Belum ada file. Tambahkan file audio di atas.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-700/50 pt-4 mt-2">
+                    <!-- Tambahan kolom input untuk Nama File -->
+                    <div class="flex flex-col gap-2 md:col-span-2">
+                        <label class="text-sm text-slate-300 font-medium">Nama File Hasil (Opsional)</label>
+                        <input type="text" id="joiner-output-name" placeholder="Misal: kompilasi_linkin_park" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-medium focus:outline-none focus:border-emerald-500 w-full transition-all">
+                    </div>
+                    
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm text-slate-300 font-medium">Format Output (Hasil Gabungan)</label>
+                        <select id="joiner-output-format" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-medium focus:outline-none focus:border-emerald-500 w-full transition-all">
+                            <option value="mp3" selected>MP3 (Ukuran Kecil, Cepat)</option>
+                            <option value="wav">WAV (Kualitas Tinggi, Cepat)</option>
+                            <option value="ogg">OGG (Real-time Encoding)</option>
+                            <option value="m4a">M4A (Real-time Encoding)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button id="merge-audio-btn" class="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold py-2.5 px-4 rounded-xl shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fa-solid fa-layer-group"></i>
+                            <span>Gabungkan Audio</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONVERTER VIEW (Hidden by default) -->
+        <div id="converter-view" class="hidden flex flex-col gap-6 w-full">
+            <!-- Converter Upload -->
+            <div id="converter-upload-card" class="bg-slate-800/70 backdrop-blur-sm border-2 border-dashed border-slate-600 hover:border-amber-500/80 transition-all rounded-3xl p-8 text-center flex flex-col items-center justify-center cursor-pointer shadow-xl relative group min-h-[200px]">
+                <input type="file" id="converter-file-input" accept="audio/*" multiple class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                <div class="w-16 h-16 bg-amber-500/10 group-hover:bg-amber-500/20 text-amber-400 rounded-2xl flex items-center justify-center text-2xl mb-3 transition-transform group-hover:scale-110 shadow-inner">
+                    <i class="fa-solid fa-file-export"></i>
+                </div>
+                <h2 class="text-lg font-semibold text-white mb-1">Pilih File untuk Dikonversi</h2>
+                <p class="text-xs text-slate-400 max-w-md">Unggah satu atau beberapa file audio untuk mengubah formatnya secara massal.</p>
+            </div>
+
+            <!-- Converter Editor -->
+            <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-lg flex flex-col gap-4">
+                <div class="flex items-center justify-between border-b border-slate-700/50 pb-4">
+                    <h4 class="text-sm font-semibold text-slate-300 uppercase tracking-wider flex items-center space-x-2">
+                        <i class="fa-solid fa-list-check text-amber-400"></i>
+                        <span>Daftar File Konversi</span>
+                    </h4>
+                    <div class="text-xs font-mono text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20">
+                        Total: <span id="converter-file-count">0 File</span>
+                    </div>
+                </div>
+
+                <div id="converter-list-container" class="flex flex-col gap-3 min-h-[150px] max-h-[400px] overflow-y-auto pr-2">
+                    <div class="h-full flex flex-col items-center justify-center text-center p-6 text-slate-500 border border-dashed border-slate-700/50 rounded-xl">
+                        <i class="fa-solid fa-music text-2xl mb-2 opacity-50"></i>
+                        <p class="text-sm">Belum ada file. Tambahkan file audio di atas.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-700/50 pt-4 mt-2">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm text-slate-300 font-medium">Ubah Semua Menjadi Format:</label>
+                        <select id="converter-output-format" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-medium focus:outline-none focus:border-amber-500 w-full transition-all">
+                            <option value="mp3" selected>MP3 (Ukuran Kecil, Cepat)</option>
+                            <option value="wav">WAV (Kualitas Tinggi, Cepat)</option>
+                            <option value="ogg">OGG (Real-time Encoding)</option>
+                            <option value="m4a">M4A (Real-time Encoding)</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button id="convert-audio-btn" class="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-semibold py-2.5 px-4 rounded-xl shadow-lg shadow-amber-600/30 transition-all flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            <i class="fa-solid fa-arrows-rotate"></i>
+                            <span>Konversi Semua File</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SPEED CHANGER VIEW (Hidden by default) -->
+        <div id="speed-view" class="hidden flex flex-col gap-6 w-full">
+            <!-- Speed Upload -->
+            <div id="speed-upload-card" class="bg-slate-800/70 backdrop-blur-sm border-2 border-dashed border-slate-600 hover:border-blue-500/80 transition-all rounded-3xl p-8 text-center flex flex-col items-center justify-center cursor-pointer shadow-xl relative group min-h-[200px]">
+                <input type="file" id="speed-file-input" accept="audio/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                <div class="w-16 h-16 bg-blue-500/10 group-hover:bg-blue-500/20 text-blue-400 rounded-2xl flex items-center justify-center text-2xl mb-3 transition-transform group-hover:scale-110 shadow-inner">
+                    <i class="fa-solid fa-bolt"></i>
+                </div>
+                <h2 class="text-lg font-semibold text-white mb-1">Ubah Kecepatan Audio</h2>
+                <p class="text-xs text-slate-400 max-w-md">Unggah satu file audio untuk mempercepat atau memperlambat tempo (dan nada).</p>
+            </div>
+
+            <!-- Speed Editor -->
+            <div id="speed-editor-container" class="hidden flex flex-col gap-6">
+                <!-- Info & Player -->
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center space-x-4 w-full md:w-auto">
+                        <div class="w-12 h-12 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center text-xl shrink-0">
+                            <i class="fa-solid fa-music"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <h3 id="speed-file-name" class="font-semibold text-white truncate max-w-xs sm:max-w-md">nama_file.mp3</h3>
+                            <p class="text-xs text-slate-400">Pratinjau Hasil Kecepatan</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3 w-full md:w-auto justify-end">
+                        <button id="speed-play-btn" class="bg-blue-600 hover:bg-blue-500 text-white w-11 h-11 rounded-xl flex items-center justify-center shadow-md shadow-blue-600/30 transition-all">
+                            <i class="fa-solid fa-play" id="speed-play-icon"></i>
+                        </button>
+                        <button id="speed-stop-btn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 w-11 h-11 rounded-xl flex items-center justify-center transition-all">
+                            <i class="fa-solid fa-stop"></i>
+                        </button>
+                        <button id="speed-reset-btn" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center space-x-2">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span class="hidden sm:inline">Ganti File</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Settings & Export -->
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-lg flex flex-col gap-6">
+                    <div class="flex flex-col gap-3">
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-semibold text-slate-300 flex items-center space-x-2">
+                                <i class="fa-solid fa-person-running text-blue-400"></i>
+                                <span>Pengaturan Kecepatan (Speed & Pitch)</span>
+                            </label>
+                            <span id="speed-value-display" class="text-lg font-bold text-blue-400 bg-blue-500/10 px-3 py-1 rounded-lg border border-blue-500/20">1.00x</span>
+                        </div>
+                        <input type="range" id="speed-slider" min="0.5" max="2.0" step="0.05" value="1.0" class="w-full accent-blue-500 cursor-pointer h-2 bg-slate-700 rounded-lg appearance-none">
+                        <div class="flex justify-between text-xs text-slate-400 px-1 mt-1">
+                            <span>0.5x (Lambat)</span>
+                            <span>1.0x (Normal)</span>
+                            <span>2.0x (Cepat)</span>
+                        </div>
+                        <div class="bg-slate-900/50 p-3 rounded-xl border border-slate-700/50 text-xs text-slate-400 flex items-start space-x-2 mt-2">
+                            <i class="fa-solid fa-circle-info text-blue-400 mt-0.5"></i>
+                            <p>Mengubah kecepatan akan memengaruhi tempo sekaligus nada (pitch). Anda bisa mendengarkan pratinjaunya dengan menekan tombol putar di atas saat menggeser *slider*.</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-700/50 pt-5">
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm text-slate-300 font-medium">Nama File Hasil (Opsional)</label>
+                            <input type="text" id="speed-output-name" placeholder="Misal: lagu_speedup" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-medium focus:outline-none focus:border-blue-500 w-full transition-all">
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm text-slate-300 font-medium">Format Output</label>
+                            <select id="speed-output-format" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-medium focus:outline-none focus:border-blue-500 w-full transition-all">
+                                <option value="mp3" selected>MP3 (Ukuran Kecil, Cepat)</option>
+                                <option value="wav">WAV (Kualitas Tinggi, Cepat)</option>
+                                <option value="ogg">OGG (Real-time Encoding)</option>
+                                <option value="m4a">M4A (Real-time Encoding)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button id="process-speed-btn" class="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-semibold py-3.5 px-4 rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center space-x-2 mt-2">
+                        <i class="fa-solid fa-bolt"></i>
+                        <span>Proses & Unduh Audio</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- EFFECTS STUDIO VIEW (Hidden by default) -->
+        <div id="effects-view" class="hidden flex flex-col gap-6 w-full">
+            <!-- Effects Upload -->
+            <div id="effects-upload-card" class="bg-slate-800/70 backdrop-blur-sm border-2 border-dashed border-slate-600 hover:border-fuchsia-500/80 transition-all rounded-3xl p-8 text-center flex flex-col items-center justify-center cursor-pointer shadow-xl relative group min-h-[200px]">
+                <input type="file" id="effects-file-input" accept="audio/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                <div class="w-16 h-16 bg-fuchsia-500/10 group-hover:bg-fuchsia-500/20 text-fuchsia-400 rounded-2xl flex items-center justify-center text-2xl mb-3 transition-transform group-hover:scale-110 shadow-inner">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i>
+                </div>
+                <h2 class="text-lg font-semibold text-white mb-1">Terapkan Efek Studio</h2>
+                <p class="text-xs text-slate-400 max-w-md">Isolasi vokal, hilangkan noise, ubah suara, EQ, dan atur volume dalam satu tempat.</p>
+            </div>
+
+            <!-- Effects Editor -->
+            <div id="effects-editor-container" class="hidden flex flex-col gap-6">
+                <!-- Info & Player -->
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center space-x-4 w-full md:w-auto">
+                        <div class="w-12 h-12 rounded-xl bg-fuchsia-600/20 text-fuchsia-400 flex items-center justify-center text-xl shrink-0">
+                            <i class="fa-solid fa-music"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <h3 id="effects-file-name" class="font-semibold text-white truncate max-w-xs sm:max-w-md">nama_file.mp3</h3>
+                            <p class="text-xs text-slate-400">Pratinjau Efek (Waktu Nyata)</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3 w-full md:w-auto justify-end">
+                        <button id="effects-play-btn" class="bg-fuchsia-600 hover:bg-fuchsia-500 text-white w-11 h-11 rounded-xl flex items-center justify-center shadow-md shadow-fuchsia-600/30 transition-all">
+                            <i class="fa-solid fa-play" id="effects-play-icon"></i>
+                        </button>
+                        <button id="effects-stop-btn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 w-11 h-11 rounded-xl flex items-center justify-center transition-all">
+                            <i class="fa-solid fa-stop"></i>
+                        </button>
+                        <button id="effects-reset-btn" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center space-x-2">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            <span class="hidden sm:inline">Ganti File</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Effects Controls Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4">
+                    
+                    <!-- 1. Volume & Fade -->
+                    <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 flex flex-col gap-4 shadow-lg">
+                        <h4 class="text-sm font-semibold text-slate-300 flex items-center border-b border-slate-700/50 pb-2">
+                            <i class="fa-solid fa-volume-high text-fuchsia-400 mr-2"></i> Volume & Fades
+                        </h4>
+                        <div class="flex flex-col gap-2">
+                            <div class="flex justify-between items-center text-xs">
+                                <label class="text-slate-400">Pengali Volume (<span id="eff-vol-val">1.0x</span>)</label>
+                                <button id="eff-normalize-btn" class="text-fuchsia-400 hover:text-fuchsia-300 font-semibold text-[10px] bg-fuchsia-500/10 px-2 py-1 rounded">Auto Normalizer</button>
+                            </div>
+                            <input type="range" id="eff-volume" min="0" max="3" step="0.1" value="1.0" class="w-full accent-fuchsia-500 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 mt-1">
+                            <div class="flex flex-col gap-1">
+                                <label class="text-xs text-slate-400">Fade In (Detik)</label>
+                                <input type="number" id="eff-fadein" min="0" value="0" step="0.5" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-sm w-full focus:outline-none focus:border-fuchsia-500">
+                            </div>
+                            <div class="flex flex-col gap-1">
+                                <label class="text-xs text-slate-400">Fade Out (Detik)</label>
+                                <input type="number" id="eff-fadeout" min="0" value="0" step="0.5" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-white text-sm w-full focus:outline-none focus:border-fuchsia-500">
+                            </div>
+                        </div>
+                        <p class="text-[10px] text-slate-500 italic mt-auto">Fades hanya terdengar di file hasil akhir.</p>
+                    </div>
+
+                    <!-- 2. Equalizer -->
+                    <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 flex flex-col gap-4 shadow-lg xl:col-span-1 lg:col-span-2">
+                        <h4 class="text-sm font-semibold text-slate-300 flex items-center border-b border-slate-700/50 pb-2">
+                            <i class="fa-solid fa-sliders text-fuchsia-400 mr-2"></i> 5-Band Equalizer (EQ)
+                        </h4>
+                        <div class="flex justify-between h-32 px-1">
+                            <!-- EQ Bands -->
+                            <div class="flex flex-col items-center gap-2 h-full">
+                                <input type="range" id="eq-60" min="-12" max="12" step="1" value="0" class="h-24 w-1.5 bg-slate-700 rounded-lg appearance-none accent-fuchsia-500 cursor-pointer" style="writing-mode: bt-lr; -webkit-appearance: slider-vertical;">
+                                <span class="text-[9px] text-slate-400">60Hz</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-2 h-full">
+                                <input type="range" id="eq-230" min="-12" max="12" step="1" value="0" class="h-24 w-1.5 bg-slate-700 rounded-lg appearance-none accent-fuchsia-500 cursor-pointer" style="writing-mode: bt-lr; -webkit-appearance: slider-vertical;">
+                                <span class="text-[9px] text-slate-400">230Hz</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-2 h-full">
+                                <input type="range" id="eq-910" min="-12" max="12" step="1" value="0" class="h-24 w-1.5 bg-slate-700 rounded-lg appearance-none accent-fuchsia-500 cursor-pointer" style="writing-mode: bt-lr; -webkit-appearance: slider-vertical;">
+                                <span class="text-[9px] text-slate-400">910Hz</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-2 h-full">
+                                <input type="range" id="eq-3600" min="-12" max="12" step="1" value="0" class="h-24 w-1.5 bg-slate-700 rounded-lg appearance-none accent-fuchsia-500 cursor-pointer" style="writing-mode: bt-lr; -webkit-appearance: slider-vertical;">
+                                <span class="text-[9px] text-slate-400">3.6k</span>
+                            </div>
+                            <div class="flex flex-col items-center gap-2 h-full">
+                                <input type="range" id="eq-14k" min="-12" max="12" step="1" value="0" class="h-24 w-1.5 bg-slate-700 rounded-lg appearance-none accent-fuchsia-500 cursor-pointer" style="writing-mode: bt-lr; -webkit-appearance: slider-vertical;">
+                                <span class="text-[9px] text-slate-400">14k</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Isolasi & Noise -->
+                    <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 flex flex-col gap-4 shadow-lg">
+                        <h4 class="text-sm font-semibold text-slate-300 flex items-center border-b border-slate-700/50 pb-2">
+                            <i class="fa-solid fa-filter text-fuchsia-400 mr-2"></i> Enhancement
+                        </h4>
+                        
+                        <label class="flex items-start space-x-3 cursor-pointer group mt-1">
+                            <div class="relative flex items-center mt-0.5">
+                                <input type="checkbox" id="eff-vocal-remove" class="sr-only peer">
+                                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-fuchsia-500"></div>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-sm font-medium text-slate-200 group-hover:text-white transition-colors">Vocal Remover / Isolate</span>
+                                <span class="text-[10px] text-slate-400">Menggunakan phase-cancellation. Efektif jika vokal ada di tengah stereo.</span>
+                            </div>
+                        </label>
+
+                        <label class="flex items-start space-x-3 cursor-pointer group mt-2">
+                            <div class="relative flex items-center mt-0.5">
+                                <input type="checkbox" id="eff-noise" class="sr-only peer">
+                                <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-fuchsia-500"></div>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="text-sm font-medium text-slate-200 group-hover:text-white transition-colors">Noise Reduction / Gate</span>
+                                <span class="text-[10px] text-slate-400">Meredam desis latar (hiss) dan suara ruangan rendah.</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- 4. Voice Changer -->
+                    <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 flex flex-col gap-4 shadow-lg">
+                        <h4 class="text-sm font-semibold text-slate-300 flex items-center border-b border-slate-700/50 pb-2">
+                            <i class="fa-solid fa-masks-theater text-fuchsia-400 mr-2"></i> Voice Changer
+                        </h4>
+                        <div class="flex flex-col gap-2 mt-1">
+                            <label class="text-xs text-slate-400">Pilih Karakter Suara</label>
+                            <select id="eff-voice" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-medium focus:outline-none focus:border-fuchsia-500 w-full transition-all">
+                                <option value="normal" selected>Normal (Asli)</option>
+                                <option value="robot">Robot / Dalek (Ring Modulator)</option>
+                                <option value="chipmunk">Chipmunk (Tinggi & Cepat)</option>
+                                <option value="deep">Monster (Rendah & Lambat)</option>
+                            </select>
+                        </div>
+                        <p class="text-[10px] text-slate-500 italic mt-auto">Efek Chipmunk/Monster mengubah pitch sekaligus kecepatan tempo (Speed).</p>
+                    </div>
+
+                </div>
+
+                <!-- Export Section -->
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-lg mt-2">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm text-slate-300 font-medium">Nama File Hasil (Opsional)</label>
+                            <input type="text" id="effects-output-name" placeholder="Misal: audiosaya_remix" class="bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-white font-medium focus:outline-none focus:border-fuchsia-500 w-full transition-all">
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm text-slate-300 font-medium">Format Output</label>
+                            <select id="effects-output-format" class="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white font-medium focus:outline-none focus:border-fuchsia-500 w-full transition-all">
+                                <option value="mp3" selected>MP3 (Ukuran Kecil, Cepat)</option>
+                                <option value="wav">WAV (Kualitas Tinggi, Cepat)</option>
+                                <option value="ogg">OGG (Real-time Encoding)</option>
+                                <option value="m4a">M4A (Real-time Encoding)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button id="process-effects-btn" class="w-full bg-gradient-to-r from-fuchsia-600 to-pink-600 hover:from-fuchsia-500 hover:to-pink-500 text-white font-semibold py-3.5 px-4 rounded-xl shadow-lg shadow-fuchsia-600/30 transition-all flex items-center justify-center space-x-2 mt-5">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Terapkan Efek & Unduh File</span>
+                    </button>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- KARAOKE MAKER VIEW (Hidden by default) -->
+        <div id="karaoke-view" class="hidden flex flex-col gap-6 w-full">
+            <!-- Karaoke Upload -->
+            <div id="karaoke-upload-card" class="bg-slate-800/70 backdrop-blur-sm border-2 border-dashed border-slate-600 hover:border-rose-500/80 transition-all rounded-3xl p-8 text-center flex flex-col items-center justify-center cursor-pointer shadow-xl relative group min-h-[200px]">
+                <input type="file" id="karaoke-file-input" accept="audio/*" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                <div class="w-16 h-16 bg-rose-500/10 group-hover:bg-rose-500/20 text-rose-400 rounded-2xl flex items-center justify-center text-2xl mb-3 transition-transform group-hover:scale-110 shadow-inner">
+                    <i class="fa-solid fa-microphone-lines"></i>
+                </div>
+                <h2 class="text-lg font-semibold text-white mb-1">Unggah Lagu untuk Karaoke</h2>
+                <p class="text-xs text-slate-400 max-w-md">Pilih lagu favorit Anda, hilangkan vokalnya, nyalakan mikrofon, dan rekam cover lagu Anda!</p>
+            </div>
+
+            <!-- Karaoke Editor -->
+            <div id="karaoke-editor-container" class="hidden flex flex-col gap-6">
+                <!-- Info Header -->
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-lg flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div class="flex items-center space-x-4 w-full md:w-auto">
+                        <div class="w-12 h-12 rounded-xl bg-rose-600/20 text-rose-400 flex items-center justify-center text-xl shrink-0">
+                            <i class="fa-solid fa-compact-disc"></i>
+                        </div>
+                        <div class="overflow-hidden">
+                            <h3 id="karaoke-file-name" class="font-semibold text-white truncate max-w-xs sm:max-w-md">nama_lagu.mp3</h3>
+                            <p class="text-xs text-slate-400">Siap untuk direkam</p>
+                        </div>
+                    </div>
+                    <button id="karaoke-reset-btn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 border border-slate-600 px-4 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center space-x-2">
+                        <i class="fa-solid fa-rotate-left"></i>
+                        <span>Ganti Lagu</span>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Left: Controls -->
+                    <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-6 shadow-lg flex flex-col gap-6">
+                        <h4 class="text-sm font-semibold text-slate-300 flex items-center border-b border-slate-700/50 pb-3">
+                            <i class="fa-solid fa-sliders text-rose-400 mr-2"></i> Pengaturan Audio
+                        </h4>
+                        
+                        <!-- Backing Track Config -->
+                        <div class="flex flex-col gap-3">
+                            <label class="flex items-start space-x-3 cursor-pointer group bg-slate-900/50 p-3 rounded-xl border border-slate-700/50">
+                                <div class="relative flex items-center mt-0.5">
+                                    <input type="checkbox" id="kar-vocal-remove" class="sr-only peer" checked>
+                                    <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-500"></div>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-sm font-medium text-slate-200 group-hover:text-white transition-colors">Vocal Remover (Instrumental Mode)</span>
+                                    <span class="text-[10px] text-slate-400">Menghapus vokal asli. Paling optimal di lagu Stereo.</span>
+                                </div>
+                            </label>
+
+                            <div class="flex flex-col gap-2 mt-2">
+                                <label class="text-xs text-slate-400 flex justify-between">
+                                    <span>Volume Lagu Latar</span>
+                                    <span id="kar-track-vol-val">1.0x</span>
+                                </label>
+                                <input type="range" id="kar-track-vol" min="0" max="2" step="0.1" value="1.0" class="w-full accent-rose-500 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+                        </div>
+
+                        <hr class="border-slate-700/50">
+
+                        <!-- Mic Config -->
+                        <div class="flex flex-col gap-4">
+                            <div class="flex items-center justify-between">
+                                <h5 class="text-sm font-medium text-slate-300">Input Mikrofon</h5>
+                                <button id="kar-enable-mic-btn" class="bg-slate-700 hover:bg-slate-600 text-rose-400 text-xs px-3 py-1.5 rounded-lg border border-slate-600 transition-all font-semibold flex items-center space-x-1.5">
+                                    <i class="fa-solid fa-microphone-slash" id="kar-mic-icon"></i>
+                                    <span id="kar-mic-status">Nyalakan Mic</span>
+                                </button>
+                            </div>
+                            
+                            <div class="flex flex-col gap-2">
+                                <label class="text-xs text-slate-400 flex justify-between">
+                                    <span>Volume Mikrofon</span>
+                                    <span id="kar-mic-vol-val">1.2x</span>
+                                </label>
+                                <input type="range" id="kar-mic-vol" min="0" max="3" step="0.1" value="1.2" class="w-full accent-rose-500 h-1.5 bg-slate-700 rounded-lg appearance-none cursor-pointer">
+                            </div>
+
+                            <label class="flex items-start space-x-3 cursor-pointer group mt-1">
+                                <div class="relative flex items-center mt-0.5">
+                                    <input type="checkbox" id="kar-monitor-mic" class="sr-only peer">
+                                    <div class="w-9 h-5 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                                </div>
+                                <div class="flex flex-col">
+                                    <span class="text-sm font-medium text-amber-400">Monitor Suara Sendiri (Hear Myself)</span>
+                                    <span class="text-[10px] text-amber-500/80 font-semibold"><i class="fa-solid fa-triangle-exclamation mr-1"></i> WAJIB GUNAKAN HEADSET! Jika pakai speaker, akan terjadi dengung (feedback) parah.</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Right: Lyrics & Record -->
+                    <div class="flex flex-col gap-4">
+                        <!-- Lyrics Box -->
+                        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-4 shadow-lg flex-1 flex flex-col">
+                            <h4 class="text-sm font-semibold text-slate-300 mb-2 flex items-center">
+                                <i class="fa-solid fa-align-left text-slate-400 mr-2"></i> Tempelkan Lirik (Opsional)
+                            </h4>
+                            <textarea class="w-full flex-1 min-h-[150px] bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-300 text-sm focus:outline-none focus:border-rose-500 resize-none font-mono" placeholder="Tempelkan lirik lagu di sini agar mudah dibaca saat Anda bernyanyi..."></textarea>
+                        </div>
+                        
+                        <!-- Record Actions -->
+                        <div class="bg-slate-800/90 border border-slate-700/80 rounded-2xl p-5 shadow-lg flex flex-col sm:flex-row gap-3">
+                            <button id="kar-play-btn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-3 rounded-xl transition-all flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-play" id="kar-play-icon-state"></i>
+                                <span id="kar-play-text">Putar (Latihan)</span>
+                            </button>
+                            <button id="kar-record-btn" class="flex-[2] bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-rose-600/30 transition-all flex items-center justify-center space-x-2">
+                                <i class="fa-solid fa-circle-dot"></i>
+                                <span id="kar-record-text">Rekam Cover Lagu!</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <div id="message-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 shadow-2xl flex flex-col items-center text-center gap-4">
+            <div id="modal-icon" class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl bg-indigo-500/20 text-indigo-400">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+                <h3 id="modal-title" class="text-lg font-bold text-white mb-1">Informasi</h3>
+                <p id="modal-message" class="text-sm text-slate-300">Pesan keterangan di sini.</p>
+            </div>
+            <button id="modal-close-btn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium py-2.5 rounded-xl transition-all">Mengerti</button>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for audio processing
+        let audioContext = null;
+        let audioBuffer = null;
+        let audioFileName = '';
+        let originalFile = null;
+        let isPlaying = false;
+        let sourceNode = null;
+        let startTime = 0;
+        let pauseAt = 0;
+        let animationFrameId = null;
+        let currentSegments = [];
+
+        // DOM Elements
+        const uploadCard = document.getElementById('upload-card');
+        const fileInput = document.getElementById('audio-file-input');
+        const editorContainer = document.getElementById('editor-container');
+        const fileNameEl = document.getElementById('file-name');
+        const fileMetaEl = document.getElementById('file-meta');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const playIcon = document.getElementById('play-icon');
+        const stopBtn = document.getElementById('stop-btn');
+        const resetFileBtn = document.getElementById('reset-file-btn');
+        const canvas = document.getElementById('waveform-canvas');
+        const ctx = canvas.getContext('2d');
+        const playbackCursor = document.getElementById('playback-cursor');
+        const currentTimeDisplay = document.getElementById('current-time-display');
+        const totalTimeDisplay = document.getElementById('total-time-display');
+        
+        // Mode & Settings Elements
+        const modeIntervalBtn = document.getElementById('mode-interval-btn');
+        const modeManualBtn = document.getElementById('mode-manual-btn');
+        const intervalSettings = document.getElementById('interval-settings');
+        const manualSettings = document.getElementById('manual-settings');
+        const splitDurationInput = document.getElementById('split-duration-input');
+        const timeUnitSelect = document.getElementById('time-unit-select');
+        const durationLabel = document.getElementById('duration-label');
+        const previewSplitCount = document.getElementById('preview-split-count');
+        const manualStartInput = document.getElementById('manual-start');
+        const manualEndInput = document.getElementById('manual-end');
+        const setStartBtn = document.getElementById('set-start-btn');
+        const setEndBtn = document.getElementById('set-end-btn');
+        const generateSegmentsBtn = document.getElementById('generate-segments-btn');
+        const segmentsListContainer = document.getElementById('segments-list-container');
+        const segmentCountBadge = document.getElementById('segment-count-badge');
+        const downloadAllBtn = document.getElementById('download-all-btn');
+        const outputFormatSelect = document.getElementById('output-format-select');
+        const formatWarning = document.getElementById('format-warning');
+
+        // Format Selection Event
+        outputFormatSelect.addEventListener('change', () => {
+            if (outputFormatSelect.value === 'ogg' || outputFormatSelect.value === 'm4a') {
+                formatWarning.classList.remove('hidden');
+            } else {
+                formatWarning.classList.add('hidden');
+            }
+        });
+
+        // Modal Elements
+        const messageModal = document.getElementById('message-modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalCloseBtn = document.getElementById('modal-close-btn');
+
+        function showMessage(title, message, isError = false) {
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            const iconEl = document.getElementById('modal-icon');
+            if (isError) {
+                iconEl.className = "w-14 h-14 rounded-2xl flex items-center justify-center text-2xl bg-rose-500/20 text-rose-400";
+                iconEl.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
+            } else {
+                iconEl.className = "w-14 h-14 rounded-2xl flex items-center justify-center text-2xl bg-indigo-500/20 text-indigo-400";
+                iconEl.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+            }
+            messageModal.classList.remove('hidden');
+        }
+
+        modalCloseBtn.addEventListener('click', () => {
+            messageModal.classList.add('hidden');
+        });
+
+        // Format seconds to mm:ss
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // File input change handler
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|wav|ogg|m4a|aac)$/i)) {
+                showMessage('Format Tidak Valid', 'Silakan unggah file audio yang valid (MP3, WAV, OGG, M4A).', true);
+                return;
+            }
+
+            originalFile = file;
+            audioFileName = file.name;
+            
+            // Show loading state
+            uploadCard.classList.add('opacity-50');
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                
+                // Update UI metadata
+                fileNameEl.textContent = audioFileName;
+                const sizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                fileMetaEl.textContent = `Durasi: ${formatTime(audioBuffer.duration)} | Ukuran: ${sizeMB} MB`;
+                totalTimeDisplay.textContent = formatTime(audioBuffer.duration);
+                
+                // Set default manual end to total duration
+                manualEndInput.value = audioBuffer.duration.toFixed(1);
+                
+                // Switch view
+                uploadCard.classList.add('hidden');
+                editorContainer.classList.remove('hidden');
+                uploadCard.classList.remove('opacity-50');
+
+                drawWaveform();
+                updateSplitPreview();
+            } catch (err) {
+                console.error(err);
+                uploadCard.classList.remove('opacity-50');
+                showMessage('Gagal Memproses Audio', 'Terjadi kesalahan saat mendekode file audio. Coba file lain.', true);
+            }
+        });
+
+        // Reset file button
+        resetFileBtn.addEventListener('click', () => {
+            stopAudio();
+            fileInput.value = '';
+            audioBuffer = null;
+            editorContainer.classList.add('hidden');
+            uploadCard.classList.remove('hidden');
+            currentSegments = [];
+            segmentsListContainer.innerHTML = `
+                <div class="h-full flex flex-col items-center justify-center text-center p-8 text-slate-500 border border-dashed border-slate-700/50 rounded-xl">
+                    <i class="fa-solid fa-scissors text-3xl mb-2 opacity-50"></i>
+                    <p class="text-sm">Klik tombol "Proses & Bagi Audio" untuk menghasilkan potongan audio sesuai pengaturan.</p>
+                </div>
+            `;
+            segmentCountBadge.textContent = '0';
+            downloadAllBtn.classList.add('hidden');
+        });
+
+        // Mode switching
+        modeIntervalBtn.addEventListener('click', () => {
+            modeIntervalBtn.className = "bg-indigo-600 text-white py-2.5 px-3 rounded-xl text-sm font-medium border border-indigo-500 transition-all shadow-sm";
+            modeManualBtn.className = "bg-slate-700 hover:bg-slate-600 text-slate-300 py-2.5 px-3 rounded-xl text-sm font-medium border border-slate-600 transition-all";
+            intervalSettings.classList.remove('hidden');
+            manualSettings.classList.add('hidden');
+        });
+
+        modeManualBtn.addEventListener('click', () => {
+            modeManualBtn.className = "bg-indigo-600 text-white py-2.5 px-3 rounded-xl text-sm font-medium border border-indigo-500 transition-all shadow-sm";
+            modeIntervalBtn.className = "bg-slate-700 hover:bg-slate-600 text-slate-300 py-2.5 px-3 rounded-xl text-sm font-medium border border-slate-600 transition-all";
+            manualSettings.classList.remove('hidden');
+            intervalSettings.classList.add('hidden');
+        });
+
+        // Update split preview calculation
+        function updateSplitPreview() {
+            if (!audioBuffer) return;
+            let val = parseFloat(splitDurationInput.value) || 1;
+            let unit = timeUnitSelect.value;
+            let durationSeconds = unit === 'minutes' ? val * 60 : val;
+
+            if (durationSeconds <= 0) durationSeconds = 1;
+
+            durationLabel.textContent = `${val} ${unit === 'minutes' ? 'Menit' : 'Detik'}`;
+            const totalDuration = audioBuffer.duration;
+            const count = Math.ceil(totalDuration / durationSeconds);
+            previewSplitCount.textContent = `Akan menghasilkan sekitar ${count} bagian potongan audio.`;
+        }
+
+        splitDurationInput.addEventListener('input', updateSplitPreview);
+        timeUnitSelect.addEventListener('change', updateSplitPreview);
+
+        // Draw Waveform on Canvas
+        function drawWaveform() {
+            if (!audioBuffer) return;
+            
+            // Set canvas resolution for crisp display
+            canvas.width = canvas.parentElement.clientWidth * window.devicePixelRatio;
+            canvas.height = canvas.parentElement.clientHeight * window.devicePixelRatio;
+            
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            ctx.clearRect(0, 0, width, height);
+            
+            const rawData = audioBuffer.getChannelData(0);
+            const samples = 300; // Number of bars
+            const blockSz = Math.floor(rawData.length / samples);
+            const multiplier = height / 2;
+
+            ctx.fillStyle = '#6366f1'; // Indigo color for waveform
+            
+            const barWidth = width / samples;
+            let x = 0;
+
+            for (let i = 0; i < samples; i++) {
+                let sum = 0;
+                for (let j = 0; j < blockSz; j++) {
+                    sum += Math.abs(rawData[i * blockSz + j]);
+                }
+                let avg = sum / blockSz;
+                let barHeight = avg * multiplier * 1.8;
+                if (barHeight < 4) barHeight = 4; // minimum height
+
+                ctx.beginPath();
+                ctx.roundRect(x + 1, height / 2 - barHeight / 2, barWidth - 2, barHeight, 2);
+                ctx.fill();
+
+                x += barWidth;
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            if (audioBuffer) drawWaveform();
+        });
+
+        // Canvas click to seek
+        canvas.addEventListener('click', (e) => {
+            if (!audioBuffer) return;
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const percent = clickX / rect.width;
+            const targetTime = percent * audioBuffer.duration;
+
+            const wasPlaying = isPlaying;
+            stopAudio();
+            pauseAt = targetTime;
+            if (wasPlaying) {
+                playAudio(pauseAt);
+            } else {
+                updateCursorPosition(pauseAt);
+            }
+        });
+
+        function updateCursorPosition(time) {
+            if (!audioBuffer) return;
+            const percent = (time / audioBuffer.duration) * 100;
+            playbackCursor.style.left = `${Math.min(Math.max(percent, 0), 100)}%`;
+            currentTimeDisplay.textContent = formatTime(time);
+        }
+
+        // Audio playback handlers
+        function playAudio(offset = 0) {
+            if (!audioBuffer) return;
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
+            sourceNode = audioContext.createBufferSource();
+            sourceNode.buffer = audioBuffer;
+            sourceNode.connect(audioContext.destination);
+
+            startTime = audioContext.currentTime - offset;
+            sourceNode.start(0, offset);
+            isPlaying = true;
+
+            playIcon.className = "fa-solid fa-pause";
+
+            sourceNode.onended = () => {
+                if (isPlaying && (audioContext.currentTime - startTime) >= audioBuffer.duration) {
+                    stopAudio();
+                }
+            };
+
+            trackPlayback();
+        }
+
+        function trackPlayback() {
+            if (!isPlaying) return;
+            const elapsed = audioContext.currentTime - startTime;
+            if (elapsed >= audioBuffer.duration) {
+                stopAudio();
+                return;
+            }
+            updateCursorPosition(elapsed);
+            animationFrameId = requestAnimationFrame(trackPlayback);
+        }
+
+        function stopAudio() {
+            if (sourceNode) {
+                try { sourceNode.stop(); } catch(e){}
+                sourceNode.disconnect();
+                sourceNode = null;
+            }
+            isPlaying = false;
+            cancelAnimationFrame(animationFrameId);
+            playIcon.className = "fa-solid fa-play";
+            pauseAt = 0;
+            updateCursorPosition(0);
+        }
+
+        playPauseBtn.addEventListener('click', () => {
+            if (!audioBuffer) return;
+            if (isPlaying) {
+                // Pause
+                const elapsed = audioContext.currentTime - startTime;
+                pauseAt = elapsed;
+                if (sourceNode) {
+                    try { sourceNode.stop(); } catch(e){}
+                    sourceNode.disconnect();
+                    sourceNode = null;
+                }
+                isPlaying = false;
+                cancelAnimationFrame(animationFrameId);
+                playIcon.className = "fa-solid fa-play";
+            } else {
+                // Play
+                playAudio(pauseAt);
+            }
+        });
+
+        stopBtn.addEventListener('click', () => {
+            stopAudio();
+        });
+
+        // Set manual start/end buttons
+        setStartBtn.addEventListener('click', () => {
+            const current = audioContext && isPlaying ? (audioContext.currentTime - startTime) : pauseAt;
+            manualStartInput.value = current.toFixed(1);
+        });
+
+        setEndBtn.addEventListener('click', () => {
+            const current = audioContext && isPlaying ? (audioContext.currentTime - startTime) : pauseAt;
+            manualEndInput.value = current.toFixed(1);
+        });
+
+        // Helper to encode AudioBuffer to WAV blob
+        function bufferToWavBlob(buffer) {
+            const numOfChan = buffer.numberOfChannels;
+            const length = buffer.length * numOfChan * 2 + 44;
+            const out = new DataView(new ArrayBuffer(length));
+            let channels = [];
+            let sampleRate = buffer.sampleRate;
+            let offset = 0;
+            let pos = 0;
+
+            function writeString(str) {
+                for (let i = 0; i < str.length; i++) {
+                    out.setUint8(pos++, str.charCodeAt(i));
+                }
+            }
+
+            function setUint16(data) {
+                out.setUint16(pos, data, true);
+                pos += 2;
+            }
+
+            function setUint32(data) {
+                out.setUint32(pos, data, true);
+                pos += 4;
+            }
+
+            // RIFF chunk descriptor
+            writeString('RIFF');
+            setUint32(length - 8);
+            writeString('WAVE');
+
+            // fmt sub-chunk
+            writeString('fmt ');
+            setUint32(16); // SubChunk1Size (16 for PCM)
+            setUint16(1);  // AudioFormat (1 for PCM)
+            setUint16(numOfChan);
+            setUint32(sampleRate);
+            setUint32(sampleRate * numOfChan * 2); // ByteRate
+            setUint16(numOfChan * 2); // BlockAlign
+            setUint16(16); // BitsPerSample
+
+            // data sub-chunk
+            writeString('data');
+            setUint32(length - pos - 4);
+
+            for (let i = 0; i < buffer.numberOfChannels; i++) {
+                channels.push(buffer.getChannelData(i));
+            }
+
+            while (offset < buffer.length) {
+                for (let i = 0; i < numOfChan; i++) {
+                    let sample = Math.max(-1, Math.min(1, channels[i][offset]));
+                    sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767);
+                    out.setInt16(pos, sample, true);
+                    pos += 2;
+                }
+                offset++;
+            }
+
+            return new Blob([out.buffer], { type: 'audio/wav' });
+        }
+
+        // Generate segments logic
+        generateSegmentsBtn.addEventListener('click', async () => {
+            if (!audioBuffer) return;
+
+            stopAudio();
+            generateSegmentsBtn.disabled = true;
+            generateSegmentsBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Memproses Potongan...</span>';
+
+            setTimeout(() => {
+                try {
+                    currentSegments = [];
+                    const isIntervalMode = !intervalSettings.classList.contains('hidden');
+
+                    if (isIntervalMode) {
+                        let val = parseFloat(splitDurationInput.value) || 5;
+                        let unit = timeUnitSelect.value;
+                        let intervalSec = unit === 'minutes' ? val * 60 : val;
+                        if (intervalSec <= 0) intervalSec = 60;
+
+                        let start = 0;
+                        let index = 1;
+                        while (start < audioBuffer.duration) {
+                            let end = Math.min(start + intervalSec, audioBuffer.duration);
+                            currentSegments.push({
+                                index: index++,
+                                start: start,
+                                end: end
+                            });
+                            start = end;
+                        }
+                    } else {
+                        // Manual mode
+                        let start = parseFloat(manualStartInput.value) || 0;
+                        let end = parseFloat(manualEndInput.value) || audioBuffer.duration;
+                        
+                        if (start < 0) start = 0;
+                        if (end > audioBuffer.duration) end = audioBuffer.duration;
+                        if (start >= end) {
+                            throw new Error("Waktu mulai harus lebih kecil dari waktu selesai.");
+                        }
+
+                        currentSegments.push({
+                            index: 1,
+                            start: start,
+                            end: end
+                        });
+                    }
+
+                    renderSegmentsList();
+                    generateSegmentsBtn.disabled = false;
+                    generateSegmentsBtn.innerHTML = '<i class="fa-solid fa-scissors"></i><span>Proses & Bagi Audio</span>';
+                    
+                    if (currentSegments.length > 0) {
+                        downloadAllBtn.classList.remove('hidden');
+                        segmentCountBadge.textContent = currentSegments.length;
+                    }
+                } catch (err) {
+                    generateSegmentsBtn.disabled = false;
+                    generateSegmentsBtn.innerHTML = '<i class="fa-solid fa-scissors"></i><span>Proses & Bagi Audio</span>';
+                    showMessage('Kesalahan Pemotongan', err.message || 'Gagal memproses potongan audio.', true);
+                }
+            }, 100);
+        });
+
+        function renderSegmentsList() {
+            if (currentSegments.length === 0) {
+                segmentsListContainer.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-center p-8 text-slate-500 border border-dashed border-slate-700/50 rounded-xl">
+                        <i class="fa-solid fa-scissors text-3xl mb-2 opacity-50"></i>
+                        <p class="text-sm">Belum ada potongan audio yang dihasilkan.</p>
+                    </div>
+                `;
+                downloadAllBtn.classList.add('hidden');
+                segmentCountBadge.textContent = '0';
+                return;
+            }
+
+            segmentsListContainer.innerHTML = '';
+            
+            currentSegments.forEach((seg, idx) => {
+                const durationSec = seg.end - seg.start;
+                const baseName = audioFileName.substring(0, audioFileName.lastIndexOf('.')) || audioFileName;
+                const segNameBase = `${baseName}_part${seg.index}_${formatTime(seg.start).replace(':', '')}-${formatTime(seg.end).replace(':', '')}`;
+
+                const item = document.createElement('div');
+                item.className = "bg-slate-900/60 border border-slate-700/60 rounded-xl p-3.5 flex items-center justify-between gap-3 hover:border-indigo-500/50 transition-all";
+                item.innerHTML = `
+                    <div class="flex items-center space-x-3 overflow-hidden">
+                        <div class="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold text-xs shrink-0">
+                            #${seg.index}
+                        </div>
+                        <div class="overflow-hidden">
+                            <h5 class="font-medium text-white text-sm truncate">${segNameBase}</h5>
+                            <p class="text-xs text-slate-400">Mulai: ${formatTime(seg.start)} - Selesai: ${formatTime(seg.end)} <span class="text-indigo-400 font-semibold">(Durasi: ${durationSec.toFixed(1)}s)</span></p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2 shrink-0">
+                        <button class="preview-seg-btn bg-slate-800 hover:bg-slate-700 text-slate-300 w-9 h-9 rounded-lg flex items-center justify-center transition-all text-sm" title="Putar Bagian Ini">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                        <button class="download-seg-btn bg-indigo-600 hover:bg-indigo-500 text-white w-9 h-9 rounded-lg flex items-center justify-center transition-all text-sm shadow-md" title="Unduh File">
+                            <i class="fa-solid fa-download"></i>
+                        </button>
+                    </div>
+                `;
+
+                // Preview segment button
+                const prevBtn = item.querySelector('.preview-seg-btn');
+                prevBtn.addEventListener('click', () => {
+                    playSegment(seg.start, seg.end);
+                });
+
+                // Download segment button
+                const dlBtn = item.querySelector('.download-seg-btn');
+                dlBtn.addEventListener('click', () => {
+                    downloadSegment(seg, segNameBase);
+                });
+
+                segmentsListContainer.appendChild(item);
+            });
+        }
+
+        let segmentSourceNode = null;
+        function playSegment(start, end) {
+            if (!audioBuffer) return;
+            if (segmentSourceNode) {
+                try { segmentSourceNode.stop(); } catch(e){}
+                segmentSourceNode.disconnect();
+            }
+
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
+            segmentSourceNode = audioContext.createBufferSource();
+            segmentSourceNode.buffer = audioBuffer;
+            segmentSourceNode.connect(audioContext.destination);
+
+            segmentSourceNode.start(0, start, end - start);
+            updateCursorPosition(start);
+            
+            // Temporary track animation during segment preview
+            const segStartTime = audioContext.currentTime;
+            const segDuration = end - start;
+
+            function trackSeg() {
+                const elapsed = (audioContext.currentTime - segStartTime);
+                if (elapsed <= segDuration) {
+                    updateCursorPosition(start + elapsed);
+                    requestAnimationFrame(trackSeg);
+                } else {
+                    updateCursorPosition(end);
+                }
+            }
+            requestAnimationFrame(trackSeg);
+        }
+
+    // --- Encoders ---
+    function encodeToMp3(audioBuffer) {
+        if (typeof lamejs === 'undefined') {
+            throw new Error("Library LameJS untuk MP3 tidak termuat.");
+        }
+        const channels = audioBuffer.numberOfChannels;
+        const sampleRate = audioBuffer.sampleRate;
+        const kbps = 128; // Kualitas bitrate MP3
+        
+        const mp3encoder = new lamejs.Mp3Encoder(channels, sampleRate, kbps);
+        const mp3Data = [];
+        
+        const left = audioBuffer.getChannelData(0);
+        const right = channels > 1 ? audioBuffer.getChannelData(1) : null;
+        
+        const sampleBlockSize = 1152;
+        const leftInt16 = new Int16Array(left.length);
+        const rightInt16 = right ? new Int16Array(right.length) : null;
+        
+        // Konversi Float32 ke Int16
+        for (let i = 0; i < left.length; i++) {
+            let s = Math.max(-1, Math.min(1, left[i]));
+            leftInt16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+            if (right) {
+                let s2 = Math.max(-1, Math.min(1, right[i]));
+                rightInt16[i] = s2 < 0 ? s2 * 0x8000 : s2 * 0x7FFF;
+            }
+        }
+        
+        // Encode chunk by chunk
+        for (let i = 0; i < leftInt16.length; i += sampleBlockSize) {
+            const leftChunk = leftInt16.subarray(i, i + sampleBlockSize);
+            let mp3buf;
+            if (channels > 1) {
+                const rightChunk = rightInt16.subarray(i, i + sampleBlockSize);
+                mp3buf = mp3encoder.encodeBuffer(leftChunk, rightChunk);
+            } else {
+                mp3buf = mp3encoder.encodeBuffer(leftChunk);
+            }
+            if (mp3buf.length > 0) mp3Data.push(mp3buf);
+        }
+        
+        const mp3buf = mp3encoder.flush();
+        if (mp3buf.length > 0) mp3Data.push(mp3buf);
+        
+        return new Blob(mp3Data, { type: 'audio/mp3' });
+    }
+
+    // Fallback Encoding Real-time menggunakan MediaRecorder Browser untuk OGG/M4A
+    function encodeRealTime(audioBuffer, format) {
+        return new Promise((resolve, reject) => {
+            let mimeType = format === 'ogg' ? 'audio/webm;codecs=opus' : 'audio/mp4'; 
+            if (!MediaRecorder.isTypeSupported(mimeType)) {
+                mimeType = format === 'ogg' ? 'audio/ogg' : 'audio/webm';
+                if (!MediaRecorder.isTypeSupported(mimeType)) {
+                    mimeType = ''; 
+                }
+            }
+
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const dest = ctx.createMediaStreamDestination();
+            const mediaRecorder = new MediaRecorder(dest.stream, mimeType ? { mimeType: mimeType } : undefined);
+            const chunks = [];
+            
+            mediaRecorder.ondataavailable = e => {
+                if (e.data.size > 0) chunks.push(e.data);
+            };
+            
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(chunks, { type: mimeType || 'audio/' + format });
+                resolve(blob);
+            };
+            
+            const source = ctx.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(dest);
+            
+            mediaRecorder.start();
+            source.start();
+            
+            source.onended = () => {
+                mediaRecorder.stop();
+                ctx.close();
+            };
+        });
+    }
+
+    async function downloadSegment(seg, baseName) {
+        try {
+            const format = outputFormatSelect.value;
+            const filename = `${baseName}.${format}`;
+            
+            const sampleRate = audioBuffer.sampleRate;
+            const startSample = Math.floor(seg.start * sampleRate);
+            const endSample = Math.floor(seg.end * sampleRate);
+            const frameCount = endSample - startSample;
+
+            const newBuffer = audioContext.createBuffer(
+                audioBuffer.numberOfChannels,
+                frameCount,
+                sampleRate
+            );
+
+            for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
+                const channelData = audioBuffer.getChannelData(i);
+                const newChannelData = newBuffer.getChannelData(i);
+                for (let j = 0; j < frameCount; j++) {
+                    newChannelData[j] = channelData[startSample + j];
+                }
+            }
+
+            let blob;
+            if (format === 'wav') {
+                blob = bufferToWavBlob(newBuffer);
+            } else if (format === 'mp3') {
+                blob = encodeToMp3(newBuffer);
+            } else {
+                showMessage('Memproses Real-time', `Mengekspor ${format.toUpperCase()} membutuhkan waktu sesuai durasi potongan (${(seg.end - seg.start).toFixed(1)} detik). Harap jangan tutup halaman...`);
+                blob = await encodeRealTime(newBuffer, format);
+                messageModal.classList.add('hidden');
+            }
+
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        } catch (err) {
+            console.error(err);
+            showMessage('Gagal Mengunduh', 'Terjadi kesalahan saat mengekspor potongan audio.', true);
+        }
+    }
+
+    downloadAllBtn.addEventListener('click', async () => {
+        if (currentSegments.length === 0) return;
+        downloadAllBtn.disabled = true;
+        downloadAllBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Menyiapkan...</span>';
+
+        const format = outputFormatSelect.value;
+        if (format === 'ogg' || format === 'm4a') {
+            showMessage('Proses Massal Real-time', 'Perhatian: Mengunduh semua dalam format ini akan memakan waktu yang sangat lama karena diproses secara real-time per potongan.');
+            await new Promise(r => setTimeout(r, 2000));
+        }
+
+        // Download segments sequentially
+        for (let i = 0; i < currentSegments.length; i++) {
+            const seg = currentSegments[i];
+            const baseName = audioFileName.substring(0, audioFileName.lastIndexOf('.')) || audioFileName;
+            const segNameBase = `${baseName}_part${seg.index}_${formatTime(seg.start).replace(':', '')}-${formatTime(seg.end).replace(':', '')}`;
+            
+            await downloadSegment(seg, segNameBase);
+            await new Promise(r => setTimeout(r, 600)); // Jeda sedikit mencegah blokir browser
+        }
+
+        downloadAllBtn.disabled = false;
+        downloadAllBtn.innerHTML = '<i class="fa-solid fa-download"></i><span>Unduh Semua (ZIP/Bulk)</span>';
+        showMessage('Berhasil', 'Semua potongan audio telah diunduh ke perangkat Anda.');
+    });
+
+    // ==========================================
+    // --- FITUR PENGGABUNG AUDIO (JOINER) ---
+    // ==========================================
+    
+    // Tab switching
+    const tabSplitterBtn = document.getElementById('tab-splitter-btn');
+    const tabJoinerBtn = document.getElementById('tab-joiner-btn');
+    const tabConverterBtn = document.getElementById('tab-converter-btn');
+    const tabSpeedBtn = document.getElementById('tab-speed-btn');
+    const tabEffectsBtn = document.getElementById('tab-effects-btn'); // New Tab
+    const tabKaraokeBtn = document.getElementById('tab-karaoke-btn'); // Karaoke Tab
+    
+    const splitterView = document.getElementById('splitter-view');
+    const joinerView = document.getElementById('joiner-view');
+    const converterView = document.getElementById('converter-view');
+    const speedView = document.getElementById('speed-view');
+    const effectsView = document.getElementById('effects-view'); // New View
+    const karaokeView = document.getElementById('karaoke-view'); // Karaoke View
+
+    function resetTabStyles() {
+        tabSplitterBtn.className = "px-6 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 font-medium hover:bg-slate-700/50 transition-all flex items-center space-x-2";
+        tabJoinerBtn.className = "px-6 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 font-medium hover:bg-slate-700/50 transition-all flex items-center space-x-2";
+        tabConverterBtn.className = "px-6 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 font-medium hover:bg-slate-700/50 transition-all flex items-center space-x-2";
+        tabSpeedBtn.className = "px-6 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 font-medium hover:bg-slate-700/50 transition-all flex items-center space-x-2";
+        tabEffectsBtn.className = "px-6 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 font-medium hover:bg-slate-700/50 transition-all flex items-center space-x-2";
+        tabKaraokeBtn.className = "px-6 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 font-medium hover:bg-slate-700/50 transition-all flex items-center space-x-2";
+        
+        splitterView.classList.add('hidden');
+        joinerView.classList.add('hidden');
+        converterView.classList.add('hidden');
+        speedView.classList.add('hidden');
+        effectsView.classList.add('hidden');
+        karaokeView.classList.add('hidden');
+    }
+
+    tabSplitterBtn.addEventListener('click', () => {
+        resetTabStyles();
+        tabSplitterBtn.className = "px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-medium shadow-md transition-all flex items-center space-x-2";
+        splitterView.classList.remove('hidden');
+    });
+
+    tabJoinerBtn.addEventListener('click', () => {
+        resetTabStyles();
+        tabJoinerBtn.className = "px-6 py-2.5 rounded-xl bg-emerald-600 text-white font-medium shadow-md transition-all flex items-center space-x-2";
+        joinerView.classList.remove('hidden');
+    });
+
+    tabConverterBtn.addEventListener('click', () => {
+        resetTabStyles();
+        tabConverterBtn.className = "px-6 py-2.5 rounded-xl bg-amber-600 text-white font-medium shadow-md transition-all flex items-center space-x-2";
+        converterView.classList.remove('hidden');
+    });
+
+    tabSpeedBtn.addEventListener('click', () => {
+        resetTabStyles();
+        tabSpeedBtn.className = "px-6 py-2.5 rounded-xl bg-blue-600 text-white font-medium shadow-md transition-all flex items-center space-x-2";
+        speedView.classList.remove('hidden');
+    });
+
+    tabEffectsBtn.addEventListener('click', () => {
+        resetTabStyles();
+        tabEffectsBtn.className = "px-6 py-2.5 rounded-xl bg-fuchsia-600 text-white font-medium shadow-md transition-all flex items-center space-x-2";
+        effectsView.classList.remove('hidden');
+    });
+
+    tabKaraokeBtn.addEventListener('click', () => {
+        resetTabStyles();
+        tabKaraokeBtn.className = "px-6 py-2.5 rounded-xl bg-rose-600 text-white font-medium shadow-md transition-all flex items-center space-x-2";
+        karaokeView.classList.remove('hidden');
+    });
+
+    // Joiner Variables
+    let joinerFiles = []; 
+    const joinerFileInput = document.getElementById('joiner-file-input');
+    const joinerListContainer = document.getElementById('joiner-list-container');
+    const joinerTotalTime = document.getElementById('joiner-total-time');
+    const mergeAudioBtn = document.getElementById('merge-audio-btn');
+    const joinerOutputFormat = document.getElementById('joiner-output-format');
+    const joinerOutputName = document.getElementById('joiner-output-name');
+
+    // Handle File Upload for Joiner
+    joinerFileInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+        
+        // Tampilkan loading di card
+        const parent = document.getElementById('joiner-upload-card');
+        parent.classList.add('opacity-50', 'pointer-events-none');
+        
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        for (const file of files) {
+            if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|wav|ogg|m4a|aac)$/i)) {
+                continue; // Abaikan file non-audio
+            }
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                
+                joinerFiles.push({
+                    id: Date.now() + Math.random().toString(36).substring(2, 9),
+                    file: file,
+                    buffer: decodedBuffer,
+                    duration: decodedBuffer.duration,
+                    name: file.name
+                });
+            } catch (err) {
+                console.error("Error decoding file for joiner:", file.name, err);
+            }
+        }
+
+        parent.classList.remove('opacity-50', 'pointer-events-none');
+        joinerFileInput.value = ''; // Reset agar file yang sama bisa dipilih lagi jika perlu
+        renderJoinerList();
+    });
+
+    function renderJoinerList() {
+        if (joinerFiles.length === 0) {
+            joinerListContainer.innerHTML = `
+                <div class="h-full flex flex-col items-center justify-center text-center p-6 text-slate-500 border border-dashed border-slate-700/50 rounded-xl">
+                    <i class="fa-solid fa-music text-2xl mb-2 opacity-50"></i>
+                    <p class="text-sm">Belum ada file. Tambahkan file audio di atas.</p>
+                </div>
+            `;
+            joinerTotalTime.textContent = '00:00';
+            mergeAudioBtn.disabled = true;
+            return;
+        }
+
+        mergeAudioBtn.disabled = false;
+        joinerListContainer.innerHTML = '';
+        let totalDur = 0;
+
+        joinerFiles.forEach((item, index) => {
+            totalDur += item.duration;
+            
+            const el = document.createElement('div');
+            el.className = "bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 flex items-center justify-between gap-3 group hover:border-emerald-500/50 transition-all";
+            el.innerHTML = `
+                <div class="flex items-center space-x-3 overflow-hidden w-full">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold text-xs shrink-0">
+                        ${index + 1}
+                    </div>
+                    <div class="overflow-hidden flex-1">
+                        <h5 class="font-medium text-white text-sm truncate" title="${item.name}">${item.name}</h5>
+                        <p class="text-xs text-slate-400">Durasi: ${formatTime(item.duration)}</p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-1 shrink-0">
+                    <button onclick="moveJoinerItem(${index}, -1)" class="${index === 0 ? 'opacity-30 pointer-events-none' : 'hover:bg-slate-700'} bg-slate-800 text-slate-300 w-8 h-8 rounded-lg flex items-center justify-center transition-all text-xs" title="Naik">
+                        <i class="fa-solid fa-arrow-up"></i>
+                    </button>
+                    <button onclick="moveJoinerItem(${index}, 1)" class="${index === joinerFiles.length - 1 ? 'opacity-30 pointer-events-none' : 'hover:bg-slate-700'} bg-slate-800 text-slate-300 w-8 h-8 rounded-lg flex items-center justify-center transition-all text-xs" title="Turun">
+                        <i class="fa-solid fa-arrow-down"></i>
+                    </button>
+                    <button onclick="removeJoinerItem(${index})" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 w-8 h-8 rounded-lg flex items-center justify-center transition-all text-xs ml-1" title="Hapus">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            joinerListContainer.appendChild(el);
+        });
+
+        joinerTotalTime.textContent = formatTime(totalDur);
+    }
+
+    // Exported function for onclick HTML handling
+    window.moveJoinerItem = function(index, direction) {
+        if (index + direction < 0 || index + direction >= joinerFiles.length) return;
+        const temp = joinerFiles[index];
+        joinerFiles[index] = joinerFiles[index + direction];
+        joinerFiles[index + direction] = temp;
+        renderJoinerList();
+    };
+
+    window.removeJoinerItem = function(index) {
+        joinerFiles.splice(index, 1);
+        renderJoinerList();
+    };
+
+    // Merge Audio Execution Logic
+    mergeAudioBtn.addEventListener('click', async () => {
+        if (joinerFiles.length < 2) {
+            showMessage('Informasi', 'Mohon tambahkan minimal 2 file audio untuk dapat digabungkan menjadi satu.', true);
+            return;
+        }
+
+        mergeAudioBtn.disabled = true;
+        mergeAudioBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Menggabungkan...</span>';
+
+        // Set timeout to allow UI update
+        setTimeout(async () => {
+            try {
+                // 1. Calculate total length and max channels across all files
+                let totalLength = 0;
+                let maxChannels = 1;
+                let sampleRate = joinerFiles[0].buffer.sampleRate; // Use first file's sample rate base
+
+                joinerFiles.forEach(item => {
+                    totalLength += item.buffer.length;
+                    if (item.buffer.numberOfChannels > maxChannels) {
+                        maxChannels = item.buffer.numberOfChannels;
+                    }
+                });
+
+                // 2. Create the unified Output Buffer
+                const mergedBuffer = audioContext.createBuffer(maxChannels, totalLength, sampleRate);
+
+                // 3. Copy data sequentially from each file
+                let offset = 0;
+                for (const item of joinerFiles) {
+                    for (let channel = 0; channel < maxChannels; channel++) {
+                        // Handle cases where some tracks are mono and others stereo
+                        const sourceChannel = channel < item.buffer.numberOfChannels ? channel : 0;
+                        const channelData = item.buffer.getChannelData(sourceChannel);
+                        mergedBuffer.getChannelData(channel).set(channelData, offset);
+                    }
+                    offset += item.buffer.length;
+                }
+
+                // 4. Export based on selected format
+                const format = joinerOutputFormat.value;
+                let blob;
+                
+                if (format === 'wav') {
+                    blob = bufferToWavBlob(mergedBuffer);
+                } else if (format === 'mp3') {
+                    blob = encodeToMp3(mergedBuffer);
+                } else {
+                    showMessage('Memproses Real-time', `Menggabungkan dan mengekspor ke ${format.toUpperCase()} membutuhkan waktu sesuai total durasi audio. Harap jangan tutup halaman ini...`);
+                    blob = await encodeRealTime(mergedBuffer, format);
+                    messageModal.classList.add('hidden'); // Sembunyikan pesan loading
+                }
+
+                // 5. Trigger Download Action
+                let finalName = joinerOutputName.value.trim() || 'AudioStudio_Merged';
+                // Bersihkan karakter dari simbol aneh agar aman disimpan di sistem operasi
+                finalName = finalName.replace(/[^a-zA-Z0-9_\-\s]/g, '');
+
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `${finalName}.${format}`;
+                document.body.appendChild(a);
+                a.click();
+                
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showMessage('Berhasil', 'File audio telah berhasil digabungkan dan siap dinikmati.');
+                }, 100);
+
+            } catch (err) {
+                console.error(err);
+                showMessage('Gagal Memproses', 'Terjadi kesalahan saat menggabungkan audio: ' + (err.message || 'Error tidak diketahui'), true);
+            } finally {
+                mergeAudioBtn.disabled = false;
+                mergeAudioBtn.innerHTML = '<i class="fa-solid fa-layer-group"></i><span>Gabungkan Audio</span>';
+            }
+        }, 100);
+    });
+
+    // ==========================================
+    // --- FITUR KONVERTER AUDIO ---
+    // ==========================================
+    let converterFiles = [];
+    const converterFileInput = document.getElementById('converter-file-input');
+    const converterListContainer = document.getElementById('converter-list-container');
+    const converterFileCount = document.getElementById('converter-file-count');
+    const convertAudioBtn = document.getElementById('convert-audio-btn');
+    const converterOutputFormat = document.getElementById('converter-output-format');
+
+    // Handle File Upload for Converter
+    converterFileInput.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files);
+        if (!files.length) return;
+        
+        const parent = document.getElementById('converter-upload-card');
+        parent.classList.add('opacity-50', 'pointer-events-none');
+        
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        for (const file of files) {
+            if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|wav|ogg|m4a|aac)$/i)) {
+                continue; 
+            }
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                const decodedBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                
+                converterFiles.push({
+                    id: Date.now() + Math.random().toString(36).substring(2, 9),
+                    file: file,
+                    buffer: decodedBuffer,
+                    duration: decodedBuffer.duration,
+                    name: file.name
+                });
+            } catch (err) {
+                console.error("Error decoding file for converter:", file.name, err);
+            }
+        }
+
+        parent.classList.remove('opacity-50', 'pointer-events-none');
+        converterFileInput.value = ''; 
+        renderConverterList();
+    });
+
+    function renderConverterList() {
+        if (converterFiles.length === 0) {
+            converterListContainer.innerHTML = `
+                <div class="h-full flex flex-col items-center justify-center text-center p-6 text-slate-500 border border-dashed border-slate-700/50 rounded-xl">
+                    <i class="fa-solid fa-music text-2xl mb-2 opacity-50"></i>
+                    <p class="text-sm">Belum ada file. Tambahkan file audio di atas.</p>
+                </div>
+            `;
+            converterFileCount.textContent = '0 File';
+            convertAudioBtn.disabled = true;
+            return;
+        }
+
+        convertAudioBtn.disabled = false;
+        converterListContainer.innerHTML = '';
+
+        converterFiles.forEach((item, index) => {
+            const el = document.createElement('div');
+            el.className = "bg-slate-900/60 border border-slate-700/60 rounded-xl p-3 flex items-center justify-between gap-3 group hover:border-amber-500/50 transition-all";
+            el.innerHTML = `
+                <div class="flex items-center space-x-3 overflow-hidden w-full">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-xs shrink-0">
+                        ${index + 1}
+                    </div>
+                    <div class="overflow-hidden flex-1">
+                        <h5 class="font-medium text-white text-sm truncate" title="${item.name}">${item.name}</h5>
+                        <p class="text-xs text-slate-400">Format Asli: ${item.name.split('.').pop().toUpperCase()} | Durasi: ${formatTime(item.duration)}</p>
+                    </div>
+                </div>
+                <div class="flex items-center shrink-0">
+                    <button onclick="removeConverterItem(${index})" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 w-8 h-8 rounded-lg flex items-center justify-center transition-all text-xs" title="Hapus">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            converterListContainer.appendChild(el);
+        });
+
+        converterFileCount.textContent = `${converterFiles.length} File`;
+    }
+
+    window.removeConverterItem = function(index) {
+        converterFiles.splice(index, 1);
+        renderConverterList();
+    };
+
+    convertAudioBtn.addEventListener('click', async () => {
+        if (converterFiles.length === 0) return;
+
+        convertAudioBtn.disabled = true;
+        convertAudioBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Mengkonversi...</span>';
+
+        const format = converterOutputFormat.value;
+
+        if (format === 'ogg' || format === 'm4a') {
+            showMessage('Proses Konversi Real-time', 'Perhatian: Mengekspor ke format ini membutuhkan waktu pemrosesan selama durasi asli dari masing-masing audio. Harap sabar menunggu.');
+            await new Promise(r => setTimeout(r, 2000));
+        }
+
+        try {
+            for (let i = 0; i < converterFiles.length; i++) {
+                const item = converterFiles[i];
+                const baseName = item.name.substring(0, item.name.lastIndexOf('.')) || item.name;
+                const finalName = `${baseName}_converted.${format}`;
+                
+                let blob;
+                if (format === 'wav') {
+                    blob = bufferToWavBlob(item.buffer);
+                } else if (format === 'mp3') {
+                    blob = encodeToMp3(item.buffer);
+                } else {
+                    blob = await encodeRealTime(item.buffer, format);
+                    messageModal.classList.add('hidden'); // Sembunyikan pesan loading
+                }
+
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = finalName;
+                document.body.appendChild(a);
+                a.click();
+                
+                // Jeda sebentar sebelum mengunduh file selanjutnya agar browser tidak memblokir
+                await new Promise(r => setTimeout(r, 800));
+                
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+            showMessage('Berhasil', 'Semua file audio telah selesai dikonversi dan diunduh.');
+        } catch (err) {
+            console.error(err);
+            showMessage('Gagal Mengkonversi', 'Terjadi kesalahan: ' + (err.message || 'Error tidak diketahui'), true);
+        } finally {
+            convertAudioBtn.disabled = false;
+            convertAudioBtn.innerHTML = '<i class="fa-solid fa-arrows-rotate"></i><span>Konversi Semua File</span>';
+        }
+    });
+
+    // ==========================================
+    // --- FITUR PENGUBAH KECEPATAN (SPEED CHANGER) ---
+    // ==========================================
+    let speedAudioBuffer = null;
+    let speedSourceNode = null;
+    let isSpeedPlaying = false;
+    let speedFileName = '';
+    
+    // UI Elements
+    const speedFileInput = document.getElementById('speed-file-input');
+    const speedUploadCard = document.getElementById('speed-upload-card');
+    const speedEditorContainer = document.getElementById('speed-editor-container');
+    const speedFileNameEl = document.getElementById('speed-file-name');
+    const speedPlayBtn = document.getElementById('speed-play-btn');
+    const speedPlayIcon = document.getElementById('speed-play-icon');
+    const speedStopBtn = document.getElementById('speed-stop-btn');
+    const speedResetBtn = document.getElementById('speed-reset-btn');
+    const speedSlider = document.getElementById('speed-slider');
+    const speedValueDisplay = document.getElementById('speed-value-display');
+    const processSpeedBtn = document.getElementById('process-speed-btn');
+    const speedOutputName = document.getElementById('speed-output-name');
+    const speedOutputFormat = document.getElementById('speed-output-format');
+
+    // Handle File Upload
+    speedFileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|wav|ogg|m4a|aac)$/i)) {
+            showMessage('Format Tidak Valid', 'Silakan unggah file audio yang valid.', true);
+            return;
+        }
+
+        speedUploadCard.classList.add('opacity-50', 'pointer-events-none');
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            speedAudioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            speedFileName = file.name;
+            speedFileNameEl.textContent = file.name;
+            
+            speedUploadCard.classList.add('hidden');
+            speedEditorContainer.classList.remove('hidden');
+        } catch (err) {
+            console.error(err);
+            showMessage('Error', 'Gagal membaca file audio.', true);
+        } finally {
+            speedUploadCard.classList.remove('opacity-50', 'pointer-events-none');
+        }
+    });
+
+    // Handle slider realtime update
+    speedSlider.addEventListener('input', (e) => {
+        const val = parseFloat(e.target.value).toFixed(2);
+        speedValueDisplay.textContent = `${val}x`;
+        if (isSpeedPlaying && speedSourceNode) {
+            speedSourceNode.playbackRate.value = parseFloat(val);
+        }
+    });
+
+    function stopSpeedAudio() {
+        if (speedSourceNode) {
+            try { speedSourceNode.stop(); } catch(e) {}
+            speedSourceNode.disconnect();
+            speedSourceNode = null;
+        }
+        isSpeedPlaying = false;
+        speedPlayIcon.className = "fa-solid fa-play";
+    }
+
+    // Play/Pause Pratinjau
+    speedPlayBtn.addEventListener('click', () => {
+        if (!speedAudioBuffer) return;
+        
+        if (isSpeedPlaying) {
+            stopSpeedAudio();
+        } else {
+            if (audioContext.state === 'suspended') audioContext.resume();
+            
+            speedSourceNode = audioContext.createBufferSource();
+            speedSourceNode.buffer = speedAudioBuffer;
+            // Setel kecepatan berdasarkan slider
+            speedSourceNode.playbackRate.value = parseFloat(speedSlider.value);
+            speedSourceNode.connect(audioContext.destination);
+            
+            speedSourceNode.start(0);
+            isSpeedPlaying = true;
+            speedPlayIcon.className = "fa-solid fa-pause";
+
+            speedSourceNode.onended = () => {
+                isSpeedPlaying = false;
+                speedPlayIcon.className = "fa-solid fa-play";
+            };
+        }
+    });
+
+    speedStopBtn.addEventListener('click', stopSpeedAudio);
+
+    speedResetBtn.addEventListener('click', () => {
+        stopSpeedAudio();
+        speedAudioBuffer = null;
+        speedFileInput.value = '';
+        speedEditorContainer.classList.add('hidden');
+        speedUploadCard.classList.remove('hidden');
+        speedSlider.value = 1.0;
+        speedValueDisplay.textContent = '1.00x';
+    });
+
+    // Proses dan Ekspor Audio yang diubah kecepatannya
+    processSpeedBtn.addEventListener('click', async () => {
+        if (!speedAudioBuffer) return;
+        stopSpeedAudio();
+
+        processSpeedBtn.disabled = true;
+        processSpeedBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Memproses Audio...</span>';
+
+        setTimeout(async () => {
+            try {
+                const speed = parseFloat(speedSlider.value);
+                const format = speedOutputFormat.value;
+                
+                // Gunakan OfflineAudioContext untuk merender perubahan kecepatan (dan pitch) menjadi buffer baru
+                // Durasi buffer baru = Durasi Asli / Kecepatan
+                const offlineCtx = new OfflineAudioContext(
+                    speedAudioBuffer.numberOfChannels,
+                    speedAudioBuffer.length / speed,
+                    speedAudioBuffer.sampleRate
+                );
+                
+                const source = offlineCtx.createBufferSource();
+                source.buffer = speedAudioBuffer;
+                source.playbackRate.value = speed; // Terapkan kecepatan
+                source.connect(offlineCtx.destination);
+                source.start();
+                
+                // Render secara latar belakang (instan)
+                const renderedBuffer = await offlineCtx.startRendering();
+
+                let blob;
+                if (format === 'wav') {
+                    blob = bufferToWavBlob(renderedBuffer);
+                } else if (format === 'mp3') {
+                    blob = encodeToMp3(renderedBuffer);
+                } else {
+                    showMessage('Memproses Real-time', `Mengekspor ke ${format.toUpperCase()} akan memakan waktu putar hasil render. Mohon jangan tutup jendela ini...`);
+                    blob = await encodeRealTime(renderedBuffer, format);
+                    messageModal.classList.add('hidden');
+                }
+
+                // Penamaan file
+                let finalName = speedOutputName.value.trim();
+                if (!finalName) {
+                    const baseName = speedFileName.substring(0, speedFileName.lastIndexOf('.')) || speedFileName;
+                    finalName = `${baseName}_${speed}x`;
+                }
+                finalName = finalName.replace(/[^a-zA-Z0-9_\-\s]/g, '');
+
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `${finalName}.${format}`;
+                document.body.appendChild(a);
+                a.click();
+                
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showMessage('Berhasil', `File audio Anda telah selesai diproses dengan kecepatan ${speed}x dan berhasil diunduh.`);
+                }, 100);
+
+            } catch (err) {
+                console.error(err);
+                showMessage('Gagal Memproses', 'Terjadi kesalahan saat memproses audio. ' + (err.message || ''), true);
+            } finally {
+                processSpeedBtn.disabled = false;
+                processSpeedBtn.innerHTML = '<i class="fa-solid fa-bolt"></i><span>Proses & Unduh Audio</span>';
+            }
+        }, 100);
+    });
+
+    // ==========================================
+    // --- FITUR EFEK AUDIO STUDIO ---
+    // ==========================================
+    let effectsAudioBuffer = null;
+    let effectsSourceNode = null;
+    let isEffectsPlaying = false;
+    let effectsFileName = '';
+    let effectsOscillator = null; // For ring modulation cleanup
+    
+    // Elements
+    const effectsFileInput = document.getElementById('effects-file-input');
+    const effectsUploadCard = document.getElementById('effects-upload-card');
+    const effectsEditorContainer = document.getElementById('effects-editor-container');
+    const effectsFileNameEl = document.getElementById('effects-file-name');
+    const effectsPlayBtn = document.getElementById('effects-play-btn');
+    const effectsPlayIcon = document.getElementById('effects-play-icon');
+    const effectsStopBtn = document.getElementById('effects-stop-btn');
+    const effectsResetBtn = document.getElementById('effects-reset-btn');
+    const processEffectsBtn = document.getElementById('process-effects-btn');
+    const effVolumeSlider = document.getElementById('eff-volume');
+    const effVolVal = document.getElementById('eff-vol-val');
+    const effNormalizeBtn = document.getElementById('eff-normalize-btn');
+
+    // Upload Handler
+    effectsFileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (!file.type.startsWith('audio/') && !file.name.match(/\.(mp3|wav|ogg|m4a|aac)$/i)) {
+            showMessage('Format Tidak Valid', 'Silakan unggah file audio yang valid.', true);
+            return;
+        }
+
+        effectsUploadCard.classList.add('opacity-50', 'pointer-events-none');
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            effectsAudioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            effectsFileName = file.name;
+            effectsFileNameEl.textContent = file.name;
+            
+            effectsUploadCard.classList.add('hidden');
+            effectsEditorContainer.classList.remove('hidden');
+        } catch (err) {
+            console.error(err);
+            showMessage('Error', 'Gagal membaca file audio.', true);
+        } finally {
+            effectsUploadCard.classList.remove('opacity-50', 'pointer-events-none');
+        }
+    });
+
+    // Handle Volume UI
+    effVolumeSlider.addEventListener('input', (e) => {
+        effVolVal.textContent = `${parseFloat(e.target.value).toFixed(1)}x`;
+    });
+
+    // Auto Normalizer Algorithm
+    effNormalizeBtn.addEventListener('click', () => {
+        if (!effectsAudioBuffer) return;
+        let maxPeak = 0;
+        for (let c = 0; c < effectsAudioBuffer.numberOfChannels; c++) {
+            const data = effectsAudioBuffer.getChannelData(c);
+            for (let i = 0; i < data.length; i++) {
+                const abs = Math.abs(data[i]);
+                if (abs > maxPeak) maxPeak = abs;
+            }
+        }
+        
+        if (maxPeak > 0) {
+            const targetMultiplier = Math.min((1.0 / maxPeak), 3.0); // Cap at 3x so slider doesn't overflow much
+            effVolumeSlider.value = targetMultiplier.toFixed(2);
+            effVolVal.textContent = `${targetMultiplier.toFixed(1)}x`;
+            showMessage('Normalizer Selesai', `Puncak audio terdeteksi. Volume otomatis diatur ke ${targetMultiplier.toFixed(1)}x untuk memaksimalkan suara tanpa pecah (clipping).`);
+        }
+    });
+
+    function buildEffectsGraph(ctx, sourceNode, isOffline = false, offlineDuration = 0) {
+        let currentNode = sourceNode;
+
+        // 1. Vocal Remover / Phase Cancellation
+        const isVocalRemover = document.getElementById('eff-vocal-remove').checked;
+        if (isVocalRemover && effectsAudioBuffer.numberOfChannels === 2) {
+            const splitter = ctx.createChannelSplitter(2);
+            const merger = ctx.createChannelMerger(2);
+            const invertGain = ctx.createGain();
+            invertGain.gain.value = -1; // Balik fase saluran kanan
+
+            currentNode.connect(splitter);
+            splitter.connect(merger, 0, 0); // Kiri ke Kiri
+            splitter.connect(invertGain, 1); 
+            invertGain.connect(merger, 0, 0); // Kanan yang dibalik dicampur ke Kiri (Cancel out vokalnya)
+            
+            // Gandakan hasil (mono) ke saluran kanan juga
+            splitter.connect(merger, 0, 1);
+            invertGain.connect(merger, 0, 1);
+            
+            currentNode = merger;
+        } else if (isVocalRemover) {
+            console.warn("Vocal remover butuh audio Stereo (2 Channels). File ini mono.");
+        }
+
+        // 2. 5-Band Equalizer
+        const eqBands = [
+            { freq: 60, type: 'lowshelf', id: 'eq-60' },
+            { freq: 230, type: 'peaking', id: 'eq-230' },
+            { freq: 910, type: 'peaking', id: 'eq-910' },
+            { freq: 3600, type: 'peaking', id: 'eq-3600' },
+            { freq: 14000, type: 'highshelf', id: 'eq-14k' }
+        ];
+
+        eqBands.forEach(band => {
+            const val = parseFloat(document.getElementById(band.id).value);
+            if (val !== 0) {
+                const bq = ctx.createBiquadFilter();
+                bq.type = band.type;
+                bq.frequency.value = band.freq;
+                bq.gain.value = val;
+                
+                currentNode.connect(bq);
+                currentNode = bq;
+            }
+        });
+
+        // 3. Voice Changer & Pitch
+        const voiceType = document.getElementById('eff-voice').value;
+        if (voiceType === 'chipmunk') {
+            sourceNode.playbackRate.value = 1.5;
+        } else if (voiceType === 'deep') {
+            sourceNode.playbackRate.value = 0.7;
+        } else if (voiceType === 'robot') {
+            // Menggunakan Ring Modulation untuk efek robot
+            const ringOsc = ctx.createOscillator();
+            ringOsc.type = 'sawtooth';
+            ringOsc.frequency.value = 35; // Dalek flutter rate
+            
+            const ringGain = ctx.createGain();
+            ringGain.gain.value = 0; // Sinyal audio masuk ke gain
+            
+            currentNode.connect(ringGain);
+            ringOsc.connect(ringGain.gain); // Modulasi penguatan (Ring Mod)
+            
+            ringOsc.start();
+            effectsOscillator = ringOsc;
+            currentNode = ringGain;
+        }
+
+        // 4. Noise Reduction / Gate
+        const isNoiseReduction = document.getElementById('eff-noise').checked;
+        if (isNoiseReduction) {
+            const compressor = ctx.createDynamicsCompressor();
+            compressor.threshold.value = -45; // Gate threshold
+            compressor.knee.value = 35;
+            compressor.ratio.value = 12; // Steep ratio to squash noise
+            compressor.attack.value = 0.005;
+            compressor.release.value = 0.25;
+            
+            const lowpass = ctx.createBiquadFilter();
+            lowpass.type = 'lowpass';
+            lowpass.frequency.value = 9000; // Kurangi hiss/desis
+            
+            currentNode.connect(compressor);
+            compressor.connect(lowpass);
+            currentNode = lowpass;
+        }
+
+        // 5. Volume & Fades
+        const finalGain = ctx.createGain();
+        const volSlider = parseFloat(effVolumeSlider.value);
+        finalGain.gain.value = volSlider;
+
+        if (isOffline) {
+            const fadeIn = parseFloat(document.getElementById('eff-fadein').value) || 0;
+            const fadeOut = parseFloat(document.getElementById('eff-fadeout').value) || 0;
+            
+            if (fadeIn > 0) {
+                finalGain.gain.setValueAtTime(0, 0);
+                finalGain.gain.linearRampToValueAtTime(volSlider, fadeIn);
+            }
+            if (fadeOut > 0 && offlineDuration > 0) {
+                finalGain.gain.setValueAtTime(volSlider, offlineDuration - fadeOut);
+                finalGain.gain.linearRampToValueAtTime(0, offlineDuration);
+            }
+        }
+
+        currentNode.connect(finalGain);
+        finalGain.connect(ctx.destination);
+    }
+
+    // Play/Pause Pratinjau Effects
+    function stopEffectsAudio() {
+        if (effectsSourceNode) {
+            try { effectsSourceNode.stop(); } catch(e) {}
+            effectsSourceNode.disconnect();
+            effectsSourceNode = null;
+        }
+        if (effectsOscillator) {
+            try { effectsOscillator.stop(); } catch(e) {}
+            effectsOscillator.disconnect();
+            effectsOscillator = null;
+        }
+        isEffectsPlaying = false;
+        effectsPlayIcon.className = "fa-solid fa-play";
+    }
+
+    effectsPlayBtn.addEventListener('click', () => {
+        if (!effectsAudioBuffer) return;
+        
+        if (isEffectsPlaying) {
+            stopEffectsAudio();
+        } else {
+            if (audioContext.state === 'suspended') audioContext.resume();
+            
+            effectsSourceNode = audioContext.createBufferSource();
+            effectsSourceNode.buffer = effectsAudioBuffer;
+            
+            // Build real-time graph
+            buildEffectsGraph(audioContext, effectsSourceNode, false);
+            
+            effectsSourceNode.start(0);
+            isEffectsPlaying = true;
+            effectsPlayIcon.className = "fa-solid fa-pause";
+
+            effectsSourceNode.onended = () => {
+                if (isEffectsPlaying) stopEffectsAudio();
+            };
+        }
+    });
+
+    effectsStopBtn.addEventListener('click', stopEffectsAudio);
+
+    effectsResetBtn.addEventListener('click', () => {
+        stopEffectsAudio();
+        effectsAudioBuffer = null;
+        effectsFileInput.value = '';
+        effectsEditorContainer.classList.add('hidden');
+        effectsUploadCard.classList.remove('hidden');
+    });
+
+    processEffectsBtn.addEventListener('click', async () => {
+        if (!effectsAudioBuffer) return;
+        stopEffectsAudio();
+
+        processEffectsBtn.disabled = true;
+        processEffectsBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>Memproses Audio...</span>';
+
+        setTimeout(async () => {
+            try {
+                // Hitung durasi akhir jika ada perubahan kecepatan (voice changer)
+                let speedMultiplier = 1.0;
+                const voiceType = document.getElementById('eff-voice').value;
+                if (voiceType === 'chipmunk') speedMultiplier = 1.5;
+                if (voiceType === 'deep') speedMultiplier = 0.7;
+
+                const finalDuration = effectsAudioBuffer.duration / speedMultiplier;
+                
+                // Gunakan OfflineAudioContext untuk merender semua efek (EQ, Fades, Vocal Remove, dll) secara instan!
+                const offlineCtx = new OfflineAudioContext(
+                    effectsAudioBuffer.numberOfChannels,
+                    finalDuration * effectsAudioBuffer.sampleRate,
+                    effectsAudioBuffer.sampleRate
+                );
+                
+                const source = offlineCtx.createBufferSource();
+                source.buffer = effectsAudioBuffer;
+                
+                buildEffectsGraph(offlineCtx, source, true, finalDuration);
+                
+                source.start();
+                const renderedBuffer = await offlineCtx.startRendering();
+
+                // Ekspor ke format yang dipilih
+                const format = document.getElementById('effects-output-format').value;
+                let blob;
+                if (format === 'wav') {
+                    blob = bufferToWavBlob(renderedBuffer);
+                } else if (format === 'mp3') {
+                    blob = encodeToMp3(renderedBuffer);
+                } else {
+                    showMessage('Memproses Real-time', `Mengekspor dengan semua efek ke format ${format.toUpperCase()} akan memakan waktu sepanjang audio. Mohon tunggu...`);
+                    blob = await encodeRealTime(renderedBuffer, format);
+                    messageModal.classList.add('hidden');
+                }
+
+                // Penamaan file
+                let finalName = document.getElementById('effects-output-name').value.trim();
+                if (!finalName) {
+                    const baseName = effectsFileName.substring(0, effectsFileName.lastIndexOf('.')) || effectsFileName;
+                    finalName = `${baseName}_studio_edit`;
+                }
+                finalName = finalName.replace(/[^a-zA-Z0-9_\-\s]/g, '');
+
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `${finalName}.${format}`;
+                document.body.appendChild(a);
+                a.click();
+                
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    showMessage('Berhasil', 'File audio Anda telah berhasil diproses dengan efek studio dan diunduh.');
+                }, 100);
+
+            } catch (err) {
+                console.error(err);
+                showMessage('Gagal Memproses', 'Terjadi kesalahan saat menerapkan efek: ' + (err.message || ''), true);
+            } finally {
+                processEffectsBtn.disabled = false;
+                processEffectsBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles"></i><span>Terapkan Efek & Unduh File</span>';
+            }
+        }, 100);
+    });
+
+    // ==========================================
+    // --- FITUR KARAOKE MAKER ---
+    // ==========================================
+    let karAudioBuffer = null;
+    let karAudioContext = null;
+    let karSourceNode = null;
+    let karMicStream = null;
+    let karMicSource = null;
+    let karMediaRecorder = null;
+    let karRecordedChunks = [];
+    let isKarPlaying = false;
+    let isKarRecording = false;
+
+    // Elements
+    const karFileInput = document.getElementById('karaoke-file-input');
+    const karUploadCard = document.getElementById('karaoke-upload-card');
+    const karEditorContainer = document.getElementById('karaoke-editor-container');
+    const karFileNameEl = document.getElementById('karaoke-file-name');
+    const karResetBtn = document.getElementById('karaoke-reset-btn');
+    const karEnableMicBtn = document.getElementById('kar-enable-mic-btn');
+    const karMicIcon = document.getElementById('kar-mic-icon');
+    const karMicStatus = document.getElementById('kar-mic-status');
+    const karPlayBtn = document.getElementById('kar-play-btn');
+    const karRecordBtn = document.getElementById('kar-record-btn');
+    const karPlayIconState = document.getElementById('kar-play-icon-state');
+    const karPlayText = document.getElementById('kar-play-text');
+    const karRecordText = document.getElementById('kar-record-text');
+    
+    const karTrackVolSlider = document.getElementById('kar-track-vol');
+    const karMicVolSlider = document.getElementById('kar-mic-vol');
+
+    // UI Updates
+    karTrackVolSlider.addEventListener('input', e => document.getElementById('kar-track-vol-val').textContent = `${parseFloat(e.target.value).toFixed(1)}x`);
+    karMicVolSlider.addEventListener('input', e => document.getElementById('kar-mic-vol-val').textContent = `${parseFloat(e.target.value).toFixed(1)}x`);
+
+    // Upload
+    karFileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        karUploadCard.classList.add('opacity-50', 'pointer-events-none');
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            if (!karAudioContext) karAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+            karAudioBuffer = await karAudioContext.decodeAudioData(arrayBuffer);
+            karFileNameEl.textContent = file.name;
+            
+            karUploadCard.classList.add('hidden');
+            karEditorContainer.classList.remove('hidden');
+        } catch (err) {
+            showMessage('Error', 'Gagal memuat lagu. Coba file audio lain.', true);
+        } finally {
+            karUploadCard.classList.remove('opacity-50', 'pointer-events-none');
+        }
+    });
+
+    // Request Mic
+    karEnableMicBtn.addEventListener('click', async () => {
+        if (karMicStream) {
+            // Matikan Mic
+            karMicStream.getTracks().forEach(track => track.stop());
+            karMicStream = null;
+            karMicIcon.className = "fa-solid fa-microphone-slash";
+            karMicStatus.textContent = "Nyalakan Mic";
+            karEnableMicBtn.classList.replace('text-emerald-400', 'text-rose-400');
+            karEnableMicBtn.classList.replace('bg-slate-700', 'bg-slate-700');
+            return;
+        }
+
+        try {
+            karMicStream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true }, video: false });
+            karMicIcon.className = "fa-solid fa-microphone";
+            karMicStatus.textContent = "Mic Aktif";
+            karEnableMicBtn.classList.replace('text-rose-400', 'text-emerald-400');
+            karEnableMicBtn.classList.replace('bg-slate-700', 'bg-slate-800');
+            showMessage('Mikrofon Aktif', 'Mikrofon berhasil diakses. Anda siap bernyanyi!');
+        } catch (e) {
+            console.error(e);
+            showMessage('Izin Ditolak', 'Gagal mengakses mikrofon. Pastikan Anda memberi izin pada browser.', true);
+        }
+    });
+
+    function stopKaraoke() {
+        if (karSourceNode) {
+            try { karSourceNode.stop(); } catch(e){}
+            karSourceNode.disconnect();
+            karSourceNode = null;
+        }
+        if (isKarRecording && karMediaRecorder && karMediaRecorder.state !== 'inactive') {
+            karMediaRecorder.stop();
+        }
+        isKarPlaying = false;
+        isKarRecording = false;
+        
+        // Reset UI
+        karPlayIconState.className = "fa-solid fa-play";
+        karPlayText.textContent = "Putar (Latihan)";
+        karPlayBtn.classList.replace('bg-amber-600', 'bg-slate-700');
+        
+        karRecordText.textContent = "Rekam Cover Lagu!";
+        karRecordBtn.innerHTML = '<i class="fa-solid fa-circle-dot"></i><span>Rekam Cover Lagu!</span>';
+        karRecordBtn.className = "flex-[2] bg-gradient-to-r from-rose-600 to-red-600 hover:from-rose-500 hover:to-red-500 text-white font-bold py-3 rounded-xl shadow-lg shadow-rose-600/30 transition-all flex items-center justify-center space-x-2";
+    }
+
+    function startKaraokeMode(recordingMode = false) {
+        if (!karAudioBuffer) return;
+        if (karAudioContext.state === 'suspended') karAudioContext.resume();
+        
+        // Setup Media Destination untuk Recorder
+        const dest = karAudioContext.createMediaStreamDestination();
+        
+        karSourceNode = karAudioContext.createBufferSource();
+        karSourceNode.buffer = karAudioBuffer;
+        
+        let trackOut = karSourceNode;
+        
+        // Vocal Remover (Phase Cancel)
+        const isVocalRemove = document.getElementById('kar-vocal-remove').checked;
+        if (isVocalRemove && karAudioBuffer.numberOfChannels === 2) {
+            const splitter = karAudioContext.createChannelSplitter(2);
+            const merger = karAudioContext.createChannelMerger(2);
+            const invertGain = karAudioContext.createGain();
+            invertGain.gain.value = -1;
+            trackOut.connect(splitter);
+            splitter.connect(merger, 0, 0); // L
+            splitter.connect(invertGain, 1);
+            invertGain.connect(merger, 0, 0); // L - R
+            
+            splitter.connect(merger, 0, 1);
+            invertGain.connect(merger, 0, 1);
+            trackOut = merger;
+        }
+        
+        // Backing Track Volume
+        const trackGain = karAudioContext.createGain();
+        trackGain.gain.value = parseFloat(karTrackVolSlider.value);
+        trackOut.connect(trackGain);
+        
+        // Output track to Speakers & Recorder
+        trackGain.connect(karAudioContext.destination);
+        trackGain.connect(dest);
+        
+        // Setup Mic
+        if (karMicStream) {
+            karMicSource = karAudioContext.createMediaStreamSource(karMicStream);
+            const micGain = karAudioContext.createGain();
+            micGain.gain.value = parseFloat(karMicVolSlider.value);
+            karMicSource.connect(micGain);
+            
+            // Output Mic to Recorder
+            micGain.connect(dest);
+            
+            // Output Mic to Speakers (Warning Feedback!)
+            if (document.getElementById('kar-monitor-mic').checked) {
+                micGain.connect(karAudioContext.destination);
+            }
+        }
+        
+        // Recording Init
+        if (recordingMode) {
+            karRecordedChunks = [];
+            let mimeType = 'audio/webm;codecs=opus';
+            if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'audio/webm';
+            
+            karMediaRecorder = new MediaRecorder(dest.stream, { mimeType });
+            karMediaRecorder.ondataavailable = e => { if (e.data.size > 0) karRecordedChunks.push(e.data); };
+            
+            karMediaRecorder.onstop = () => {
+                const blob = new Blob(karRecordedChunks, { type: mimeType });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = `Cover_Karaoke_${Date.now()}.webm`;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(() => URL.revokeObjectURL(url), 100);
+                showMessage('Rekaman Selesai', 'Cover lagu Anda berhasil direkam dan diunduh (Format WebM Audio).');
+            };
+            
+            karMediaRecorder.start();
+            
+            karRecordBtn.innerHTML = '<i class="fa-solid fa-stop"></i><span>Hentikan Rekaman</span>';
+            karRecordBtn.className = "flex-[2] bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl shadow-lg shadow-red-600/30 transition-all flex items-center justify-center space-x-2 animate-pulse";
+            isKarRecording = true;
+        } else {
+            karPlayIconState.className = "fa-solid fa-stop";
+            karPlayText.textContent = "Hentikan";
+            karPlayBtn.classList.replace('bg-slate-700', 'bg-amber-600');
+        }
+        
+        karSourceNode.start(0);
+        isKarPlaying = true;
+        
+        karSourceNode.onended = () => stopKaraoke();
+    }
+
+    karPlayBtn.addEventListener('click', () => {
+        if (isKarPlaying) {
+            stopKaraoke();
+        } else {
+            startKaraokeMode(false); // Play only
+        }
+    });
+
+    karRecordBtn.addEventListener('click', () => {
+        if (isKarRecording) {
+            stopKaraoke();
+        } else {
+            if (isKarPlaying) stopKaraoke(); // stop background if playing
+            
+            if (!karMicStream) {
+                showMessage('Peringatan', 'Anda merekam tanpa menyalakan Mikrofon. Hasilnya hanya akan berupa musik latar saja.');
+            }
+            startKaraokeMode(true); // Play & Record
+        }
+    });
+
+    karResetBtn.addEventListener('click', () => {
+        stopKaraoke();
+        karAudioBuffer = null;
+        karFileInput.value = '';
+        karEditorContainer.classList.add('hidden');
+        karUploadCard.classList.remove('hidden');
+    });
+
+</script>
+</body>
+</html>

@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>All-in-One Downloader Ultimate</title>
+	<link href="img/logo.png" rel="icon">
+    
+    <!-- Google Fonts & Tailwind -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            DEFAULT: '#1DB954', hover: '#1ed760', dark: '#121212', card: '#181818', text: '#b3b3b3'
+                        }
+                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+    <style>
+        .bg-gradient-animate {
+            background: linear-gradient(-45deg, #121212, #1a1a1a, #0a2e16, #121212);
+            background-size: 400% 400%; animation: gradient 15s ease infinite;
+        }
+        @keyframes gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #121212; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #555; }
+    </style>
+</head>
+<body class="bg-brand-dark text-white font-sans min-h-screen flex flex-col selection:bg-brand selection:text-black">
+
+    <!-- Navbar -->
+    <nav class="w-full px-4 py-3 border-b border-white/10 bg-brand-dark/90 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-2 text-white hover:text-brand transition-colors cursor-pointer w-full md:w-1/3" onclick="resetApp()">
+                <div class="bg-brand p-1.5 rounded-full text-black shadow-[0_0_15px_rgba(29,185,84,0.3)]">
+                    <i data-lucide="download-cloud" class="w-5 h-5"></i>
+                </div>
+                <span class="font-bold text-xl tracking-tight hidden sm:block">AIO Downloader <span class="text-xs text-brand font-normal border border-brand px-1 rounded ml-1">VIP</span></span>
+            </div>
+            
+            <!-- Mode Toggle (Hanya tampil untuk Spotify) -->
+            <div id="spotifyModeToggle" class="flex bg-black/50 border border-white/10 p-1 rounded-full w-full sm:w-auto justify-center">
+                <button id="btnModeTrack" onclick="switchSpotifyMode('track')" class="flex-1 sm:flex-none px-6 py-2 rounded-full bg-brand text-black font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg">
+                    <i data-lucide="music" class="w-4 h-4"></i> Lagu (Track)
+                </button>
+                <button id="btnModePlaylist" onclick="switchSpotifyMode('playlist')" class="flex-1 sm:flex-none px-6 py-2 rounded-full text-brand-text hover:text-white font-medium text-sm transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="list-music" class="w-4 h-4"></i> Playlist
+                </button>
+            </div>
+            <div class="hidden md:flex justify-end gap-6 text-sm font-medium text-brand-text w-1/3"></div>
+        </div>
+    </nav>
+
+    <main class="flex-grow">
+        <!-- Input Area -->
+        <section class="relative pt-10 pb-12 px-6 bg-gradient-animate border-b border-white/5">
+            <div class="max-w-3xl mx-auto text-center relative z-10">
+                
+                <!-- Platform Selector -->
+                <div class="flex flex-wrap justify-center gap-2 mb-8" id="platformSelector">
+                    <button onclick="setPlatform('spotify', this, '#1DB954')" class="platform-btn bg-[#1DB954] text-black px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"><i data-lucide="music"></i> Spotify</button>
+                    <button onclick="setPlatform('youtube', this, '#FF0000')" class="platform-btn bg-white/10 text-white hover:bg-white/20 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"><i data-lucide="youtube"></i> YouTube</button>
+                    <button onclick="setPlatform('facebook', this, '#1877F2')" class="platform-btn bg-white/10 text-white hover:bg-white/20 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"><i data-lucide="facebook"></i> Facebook</button>
+                    <button onclick="setPlatform('instagram', this, '#E1306C')" class="platform-btn bg-white/10 text-white hover:bg-white/20 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"><i data-lucide="instagram"></i> Instagram</button>
+                    <button onclick="setPlatform('tiktok', this, '#00f2fe')" class="platform-btn bg-white/10 text-white hover:bg-white/20 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"><i data-lucide="smartphone"></i> TikTok</button>
+                </div>
+
+                <h1 class="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight" id="heroTitle">
+                    Unduh <span class="text-brand">Media</span> Gratis
+                </h1>
+                
+                <div class="bg-brand-card p-2 md:p-3 rounded-2xl md:rounded-full border border-white/10 shadow-2xl flex flex-col md:flex-row gap-2 mt-8">
+                    <div class="flex-grow flex items-center px-4 py-3 md:py-2 relative">
+                        <i data-lucide="link" class="w-5 h-5 text-brand-text mr-3 shrink-0"></i>
+                        <input type="text" id="urlInput" placeholder="Tempel URL di sini..." class="w-full bg-transparent border-none outline-none text-white text-sm md:text-base pr-10">
+                        <button onclick="pasteFromClipboard()" class="absolute right-4 text-brand-text hover:text-white transition-colors" title="Paste Link">
+                            <i data-lucide="clipboard-paste" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <button id="processBtn" onclick="processUrl()" class="bg-brand hover:bg-brand-hover text-black font-bold py-3 md:py-3.5 px-8 rounded-xl md:rounded-full transition-transform active:scale-95 flex items-center justify-center gap-2 shrink-0">
+                        <span>Cari Data</span>
+                        <i data-lucide="search" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <p id="errorMessage" class="text-red-400 text-sm mt-3 hidden animate-pulse"></p>
+            </div>
+        </section>
+
+        <!-- Result Area -->
+        <section id="resultSection" class="hidden py-8 px-4 md:px-6">
+            <div class="max-w-4xl mx-auto">
+                
+                <!-- Loader -->
+                <div id="loadingState" class="hidden flex-col items-center justify-center py-16">
+                    <div class="relative w-20 h-20 mb-6">
+                        <div class="absolute inset-0 border-4 border-brand/20 border-t-brand rounded-full animate-spin"></div>
+                        <i id="loadingIcon" data-lucide="loader" class="w-8 h-8 text-brand absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 animate-pulse"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Memproses Tautan...</h3>
+                    <p class="text-brand-text text-sm">Sedang mengekstrak data dari server</p>
+                </div>
+
+                <!-- Generic Video Card (YT, FB, IG, TT) -->
+                <div id="videoCard" class="hidden bg-brand-card rounded-2xl border border-white/10 p-6 md:p-8 flex-col md:flex-row gap-6 items-center shadow-xl">
+                    <div class="w-full md:w-64 aspect-video rounded-lg overflow-hidden flex-shrink-0 shadow-lg bg-black relative">
+                        <img id="videoImage" src="" alt="Thumbnail" class="w-full h-full object-cover">
+                        <div class="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded font-mono" id="videoDuration">0:00</div>
+                    </div>
+                    <div class="flex-grow w-full text-center md:text-left flex flex-col justify-center">
+                        <span id="videoPlatformBadge" class="text-xs font-bold uppercase tracking-wider text-white mb-2 px-2 py-1 bg-red-600 inline-block w-max mx-auto md:mx-0 rounded">Video Ditemukan</span>
+                        <h3 id="videoTitle" class="text-xl md:text-2xl font-bold mb-6 line-clamp-2">Judul Video</h3>
+                        
+                        <div class="flex flex-col gap-3 justify-center md:justify-start mt-2">
+                            <!-- Grup Unduhan Video -->
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <select id="videoResolutionSelect" class="bg-black/50 border border-white/10 rounded-lg px-3 py-3 text-sm text-white focus:outline-none focus:border-brand cursor-pointer w-full sm:w-1/3">
+                                    <!-- Options generated by JS -->
+                                </select>
+                                <button id="btnDownloadMp4" onclick="downloadVideo('mp4', 'btnDownloadMp4')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 group relative overflow-hidden flex-1">
+                                    <span class="relative z-10 flex items-center gap-2"><i data-lucide="video" class="w-5 h-5"></i> Unduh MP4</span>
+                                    <div class="absolute left-0 top-0 h-full bg-white/30 w-0 transition-all duration-300 download-progress"></div>
+                                </button>
+                            </div>
+
+                            <!-- Grup Unduhan Audio -->
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <select id="audioQualitySelect" class="bg-black/50 border border-white/10 rounded-lg px-3 py-3 text-sm text-white focus:outline-none focus:border-brand cursor-pointer w-full sm:w-1/3">
+                                    <option value="320">320 kbps (Terbaik)</option>
+                                    <option value="192" selected>192 kbps (Standar)</option>
+                                    <option value="128">128 kbps (Rendah)</option>
+                                </select>
+                                <button id="btnDownloadVideoMp3" onclick="downloadVideo('mp3', 'btnDownloadVideoMp3')" class="bg-brand hover:bg-brand-hover text-black font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 group relative overflow-hidden flex-1">
+                                    <span class="relative z-10 flex items-center gap-2"><i data-lucide="music" class="w-5 h-5"></i> Unduh MP3</span>
+                                    <div class="absolute left-0 top-0 h-full bg-white/30 w-0 transition-all duration-300 download-progress"></div>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Spotify Single Track Card -->
+                <div id="singleTrackCard" class="hidden bg-brand-card rounded-2xl border border-white/10 p-6 md:p-8 flex-col md:flex-row gap-6 items-center shadow-xl">
+                    <div class="w-40 h-40 md:w-48 md:h-48 rounded-lg overflow-hidden flex-shrink-0 shadow-lg bg-black">
+                        <img id="singleTrackImage" src="" alt="Cover" class="w-full h-full object-cover">
+                    </div>
+                    <div class="flex-grow w-full text-center md:text-left flex flex-col justify-center">
+                        <span class="text-xs font-bold uppercase tracking-wider text-brand mb-2 px-2 py-1 bg-brand/10 inline-block w-max mx-auto md:mx-0 rounded">Track Nyata Ditemukan</span>
+                        <h3 id="singleTrackTitle" class="text-2xl md:text-3xl font-bold mb-1 line-clamp-2">Judul Lagu</h3>
+                        <p id="singleTrackArtist" class="text-brand-text font-medium mb-6">Nama Artis</p>
+                        
+                        <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                            <button id="btnDownloadSingleMp3" onclick="downloadSpotifyAudio('singleTrackTitle', 'singleTrackArtist', 'btnDownloadSingleMp3', 'mp3')" class="w-full sm:flex-1 bg-brand hover:bg-brand-hover text-black font-bold py-4 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 group relative overflow-hidden">
+                                <span class="relative z-10 flex items-center gap-2">
+                                    <i data-lucide="music" class="w-5 h-5"></i> Unduh MP3
+                                </span>
+                                <div class="absolute left-0 top-0 h-full bg-white/30 w-0 transition-all duration-300 download-progress"></div>
+                            </button>
+                            <button id="btnDownloadSingleFlac" onclick="downloadSpotifyAudio('singleTrackTitle', 'singleTrackArtist', 'btnDownloadSingleFlac', 'flac')" class="w-full sm:flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 group relative overflow-hidden">
+                                <span class="relative z-10 flex items-center gap-2">
+                                    <i data-lucide="disc" class="w-5 h-5"></i> Unduh FLAC
+                                </span>
+                                <div class="absolute left-0 top-0 h-full bg-white/30 w-0 transition-all duration-300 download-progress"></div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Spotify Playlist Card -->
+                <div id="playlistCard" class="hidden flex flex-col gap-6">
+                    <div class="bg-brand-card rounded-2xl border border-white/10 p-6 flex flex-col sm:flex-row items-center sm:items-end gap-6 relative overflow-hidden">
+                        <div class="w-32 h-32 md:w-40 md:h-40 rounded shadow-2xl z-10 flex-shrink-0 bg-black">
+                            <img id="playlistImage" src="" class="w-full h-full object-cover rounded">
+                        </div>
+                        <div class="z-10 text-center sm:text-left flex-grow">
+                            <span class="text-xs font-bold uppercase tracking-wider text-brand mb-2">Playlist Resmi Ditemukan</span>
+                            <h2 id="playlistTitle" class="text-3xl md:text-4xl font-extrabold tracking-tight mb-2 line-clamp-2">Nama Playlist</h2>
+                            <p class="text-brand-text text-sm mb-4"><span id="playlistTrackCount">0</span> lagu berhasil dimuat via Embed Data</p>
+                            
+                            <div class="flex flex-col sm:flex-row gap-2 items-center mx-auto sm:mx-0 w-full sm:w-auto">
+                                <button id="btnDownloadSelectedMp3" onclick="downloadSelectedTracks('mp3')" disabled class="opacity-50 cursor-not-allowed bg-brand text-black font-bold py-2.5 px-6 rounded-full transition-all flex items-center justify-center gap-2 w-full sm:w-auto">
+                                    <i data-lucide="check-square" class="w-5 h-5 batch-icon"></i> <span class="batch-text">Pilih Lagu</span>
+                                </button>
+                                <button id="btnDownloadSelectedFlac" onclick="downloadSelectedTracks('flac')" disabled class="opacity-50 cursor-not-allowed bg-purple-600 text-white font-bold py-2.5 px-6 rounded-full transition-all flex items-center justify-center gap-2 w-full sm:w-auto">
+                                    <i data-lucide="check-square" class="w-5 h-5 batch-icon"></i> <span class="batch-text">Pilih Lagu</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-brand-dark/50 rounded-2xl border border-white/5 overflow-hidden">
+                        
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-4 px-4 py-4 border-b border-white/5">
+                            <div class="relative w-full md:w-1/2">
+                                <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-brand-text"></i>
+                                <input type="text" id="playlistSearch" oninput="handlePlaylistSearch(this.value)" placeholder="Cari lagu atau artis dalam playlist..." class="w-full bg-black/50 border border-white/10 rounded-lg py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-brand transition-colors">
+                            </div>
+                            <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                                <span class="text-xs text-brand-text">Tampilkan:</span>
+                                <select id="itemsPerPage" onchange="handleItemsPerPage(this.value)" class="bg-black/50 border border-white/10 rounded-lg py-1.5 px-3 text-sm text-white focus:outline-none focus:border-brand cursor-pointer">
+                                    <option value="10">10</option>
+                                    <option value="50">50</option>
+                                    <option value="100">100</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-[30px_30px_minmax(120px,1fr)_90px] md:grid-cols-[40px_40px_minmax(150px,1fr)_minmax(100px,150px)_120px] gap-4 px-4 py-3 border-b border-white/5 text-brand-text text-xs font-semibold uppercase tracking-wider items-center">
+                            <div class="flex justify-center">
+                                <input type="checkbox" id="selectAll" onclick="toggleSelectAll()" class="w-4 h-4 accent-brand cursor-pointer">
+                            </div>
+                            <div class="text-center">#</div> 
+                            <div>Judul & Artis</div> 
+                            <div class="hidden md:block">Durasi</div> 
+                            <div class="text-center">Unduh</div>
+                        </div>
+                        <div id="playlistTracksContainer" class="flex flex-col max-h-[600px] overflow-y-auto">
+                            <!-- Tracks generated by JS -->
+                        </div>
+                        
+                        <div id="paginationControls" class="flex justify-center items-center gap-2 py-4 border-t border-white/5 bg-brand-dark/30">
+                            <!-- Pagination generated by JS -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <script>
+        lucide.createIcons();
+        let currentPlatform = 'spotify';
+        let currentSpotifyMode = 'track';
+        let isDownloading = false;
+        let activeVideoUrl = '';
+
+        let currentPlaylistTracks = [];
+        let filteredPlaylistTracks = [];
+        let currentPage = 1;
+        let itemsPerPage = 10;
+
+        // Otomatis mendeteksi domain/IP saat ini dan menggunakan port 5000 untuk backend Flask
+		const API_BASE_URL = 'http://192.168.1.188:5000';
+
+        const platformThemes = {
+            'spotify': { color: '#1DB954', text: 'black' },
+            'youtube': { color: '#FF0000', text: 'white' },
+            'facebook': { color: '#1877F2', text: 'white' },
+            'instagram': { color: '#E1306C', text: 'white' },
+            'tiktok': { color: '#00f2fe', text: 'black' }
+        };
+
+        function setPlatform(platform, btnElement, colorCode) {
+            currentPlatform = platform;
+            
+            document.querySelectorAll('.platform-btn').forEach(btn => {
+                btn.className = 'platform-btn bg-white/10 text-white hover:bg-white/20 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95';
+            });
+            
+            btnElement.className = `platform-btn bg-[${colorCode}] text-${platformThemes[platform].text} px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95 shadow-lg`;
+
+            document.getElementById('urlInput').placeholder = `Tempel URL ${platform.charAt(0).toUpperCase() + platform.slice(1)} di sini...`;
+            document.getElementById('heroTitle').innerHTML = `Unduh <span class="text-[${colorCode}]">${platform.charAt(0).toUpperCase() + platform.slice(1)}</span> Gratis`;
+            
+            const spotifyToggle = document.getElementById('spotifyModeToggle');
+            if(platform === 'spotify') {
+                spotifyToggle.classList.remove('hidden');
+                spotifyToggle.classList.add('flex');
+            } else {
+                spotifyToggle.classList.add('hidden');
+                spotifyToggle.classList.remove('flex');
+            }
+
+            resetApp();
+        }
+
+        function switchSpotifyMode(mode) {
+            currentSpotifyMode = mode;
+            const btnTrack = document.getElementById('btnModeTrack');
+            const btnPlaylist = document.getElementById('btnModePlaylist');
+            
+            if (mode === 'track') {
+                btnTrack.className = "flex-1 sm:flex-none px-6 py-2 rounded-full bg-brand text-black font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg";
+                btnPlaylist.className = "flex-1 sm:flex-none px-6 py-2 rounded-full text-brand-text hover:text-white font-medium text-sm transition-all flex items-center justify-center gap-2";
+            } else {
+                btnPlaylist.className = "flex-1 sm:flex-none px-6 py-2 rounded-full bg-brand text-black font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg";
+                btnTrack.className = "flex-1 sm:flex-none px-6 py-2 rounded-full text-brand-text hover:text-white font-medium text-sm transition-all flex items-center justify-center gap-2";
+            }
+            resetApp();
+        }
+
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                document.getElementById('urlInput').value = text;
+            } catch (err) {
+                alert('Gagal mengakses clipboard. Silakan paste manual (Ctrl+V).');
+            }
+        }
+
+        function resetApp() {
+            document.getElementById('urlInput').value = '';
+            document.getElementById('resultSection').classList.add('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        async function processUrl() {
+            const input = document.getElementById('urlInput').value.trim();
+            const errorMsg = document.getElementById('errorMessage');
+            const resultSec = document.getElementById('resultSection');
+            const loader = document.getElementById('loadingState');
+            
+            const singleCard = document.getElementById('singleTrackCard');
+            const plCard = document.getElementById('playlistCard');
+            const vidCard = document.getElementById('videoCard');
+
+            if (input === "") {
+                errorMsg.innerText = "Tautan tidak boleh kosong!";
+                errorMsg.classList.remove('hidden'); return;
+            }
+
+            errorMsg.classList.add('hidden');
+            resultSec.classList.remove('hidden');
+            loader.classList.remove('hidden'); loader.classList.add('flex');
+            singleCard.classList.add('hidden'); singleCard.classList.remove('flex');
+            plCard.classList.add('hidden');
+            vidCard.classList.add('hidden'); vidCard.classList.remove('flex');
+
+            resultSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/info`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: input, platform: currentPlatform })
+                });
+
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || "Gagal menghubungi server backend.");
+
+                loader.classList.add('hidden'); loader.classList.remove('flex');
+
+                if (data.type === 'track') {
+                    document.getElementById('singleTrackTitle').innerText = data.title;
+                    document.getElementById('singleTrackArtist').innerText = data.artist;
+                    document.getElementById('singleTrackImage').src = data.cover;
+                    singleCard.classList.remove('hidden'); singleCard.classList.add('flex');
+                } 
+                else if (data.type === 'playlist') {
+                    document.getElementById('playlistTitle').innerText = data.title;
+                    document.getElementById('playlistImage').src = data.cover;
+                    document.getElementById('playlistTrackCount').innerText = data.total;
+                    
+                    document.getElementById('selectAll').checked = false;
+                    updateDownloadButtonText();
+
+                    currentPlaylistTracks = data.tracks;
+                    filteredPlaylistTracks = [...currentPlaylistTracks];
+                    currentPage = 1;
+                    document.getElementById('playlistSearch').value = '';
+                    document.getElementById('itemsPerPage').value = '10';
+                    itemsPerPage = 10;
+                    
+                    renderPlaylistTracks();
+                    
+                    plCard.classList.remove('hidden'); plCard.classList.add('flex');
+                }
+                else if (data.type === 'video') {
+                    activeVideoUrl = data.url;
+                    document.getElementById('videoTitle').innerText = data.title;
+                    document.getElementById('videoImage').src = data.thumbnail || 'https://placehold.co/600x400/121212/ffffff?text=No+Thumbnail';
+                    document.getElementById('videoDuration').innerText = data.duration || '-:-';
+                    
+                    const badge = document.getElementById('videoPlatformBadge');
+                    badge.innerText = `${data.platform} Video`;
+                    badge.style.backgroundColor = platformThemes[data.platform.toLowerCase()].color;
+                    badge.style.color = platformThemes[data.platform.toLowerCase()].text;
+
+                    const resSelect = document.getElementById('videoResolutionSelect');
+                    resSelect.innerHTML = '';
+                    if (data.resolutions && data.resolutions.length > 0) {
+                        data.resolutions.forEach(res => {
+                            const option = document.createElement('option');
+                            const resValue = res === 'best' ? 'best' : res.replace('p', '');
+                            option.value = resValue;
+                            option.text = res === 'best' ? 'Kualitas Terbaik' : `${res} (Video)`;
+                            resSelect.appendChild(option);
+                        });
+                    } else {
+                        resSelect.innerHTML = '<option value="best">Kualitas Terbaik</option>';
+                    }
+
+                    vidCard.classList.remove('hidden'); vidCard.classList.add('flex');
+                }
+
+            } catch (error) {
+                loader.classList.add('hidden'); loader.classList.remove('flex');
+                errorMsg.innerText = error.message;
+                errorMsg.classList.remove('hidden');
+            }
+        }
+
+        function renderPlaylistTracks() {
+            const container = document.getElementById('playlistTracksContainer');
+            container.innerHTML = '';
+            
+            const totalItems = filteredPlaylistTracks.length;
+            const limit = parseInt(itemsPerPage);
+            const totalPages = Math.max(1, Math.ceil(totalItems / limit));
+            
+            if (currentPage > totalPages) currentPage = totalPages;
+            
+            const startIndex = (currentPage - 1) * limit;
+            const endIndex = Math.min(startIndex + limit, totalItems);
+            
+            const tracksToShow = filteredPlaylistTracks.slice(startIndex, endIndex);
+
+            if (tracksToShow.length === 0) {
+                container.innerHTML = `<div class="py-8 px-4 text-center text-brand-text">Tidak ada lagu yang cocok dengan pencarian.</div>`;
+            } else {
+                tracksToShow.forEach((track, index) => {
+                    const actualIndex = startIndex + index;
+                    const safeId = (track.id && track.id !== 'unknown') ? track.id : 'track_' + actualIndex;
+                    
+                    const row = document.createElement('div');
+                    row.id = `row_${safeId}`;
+                    row.className = "grid grid-cols-[30px_30px_minmax(120px,1fr)_90px] md:grid-cols-[40px_40px_minmax(150px,1fr)_minmax(100px,150px)_120px] gap-4 px-4 py-3 hover:bg-white/5 border-b border-white/5 items-center transition-colors";
+                    row.innerHTML = `
+                        <div class="flex justify-center">
+                            <input type="checkbox" class="track-checkbox w-4 h-4 accent-brand cursor-pointer" value="${safeId}" onchange="updateDownloadButtonText()">
+                        </div>
+                        <div class="text-center text-brand-text font-medium text-sm md:text-base">${actualIndex + 1}</div>
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <img src="${track.img}" class="w-10 h-10 rounded object-cover shadow bg-black shrink-0 hidden sm:block">
+                            <div class="flex flex-col truncate">
+                                <span id="t_title_${safeId}" class="font-bold text-white truncate text-sm md:text-base">${track.title}</span>
+                                <span id="t_artist_${safeId}" class="text-xs md:text-sm text-brand-text truncate">${track.artist}</span>
+                            </div>
+                        </div>
+                        <div class="text-sm text-brand-text hidden md:block">${track.duration}</div>
+                        <div class="flex justify-center gap-1 md:gap-2">
+                            <button id="btn_${safeId}_mp3" onclick="downloadSpotifyAudio('t_title_${safeId}', 't_artist_${safeId}', 'btn_${safeId}_mp3', 'mp3')" class="bg-brand hover:bg-brand-hover text-black font-bold py-1.5 px-2 md:px-3 rounded text-xs transition-colors flex items-center justify-center relative overflow-hidden group w-full" title="Unduh MP3">
+                                <span class="relative z-10 flex items-center justify-center">MP3</span>
+                                <div class="absolute left-0 top-0 h-full bg-white/30 w-0 transition-all duration-300 download-progress"></div>
+                            </button>
+                            <button id="btn_${safeId}_flac" onclick="downloadSpotifyAudio('t_title_${safeId}', 't_artist_${safeId}', 'btn_${safeId}_flac', 'flac')" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-1.5 px-2 md:px-3 rounded text-xs transition-colors flex items-center justify-center relative overflow-hidden group w-full" title="Unduh FLAC">
+                                <span class="relative z-10 flex items-center justify-center">FLAC</span>
+                                <div class="absolute left-0 top-0 h-full bg-white/30 w-0 transition-all duration-300 download-progress"></div>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(row);
+                });
+            }
+            
+            document.getElementById('selectAll').checked = false;
+            updateDownloadButtonText();
+            renderPaginationControls(totalPages);
+            lucide.createIcons();
+        }
+
+        function handlePlaylistSearch(query) {
+            const lowerQuery = query.toLowerCase();
+            filteredPlaylistTracks = currentPlaylistTracks.filter(track => 
+                track.title.toLowerCase().includes(lowerQuery) || 
+                track.artist.toLowerCase().includes(lowerQuery)
+            );
+            currentPage = 1;
+            renderPlaylistTracks();
+        }
+
+        function handleItemsPerPage(value) {
+            itemsPerPage = value;
+            currentPage = 1;
+            renderPlaylistTracks();
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            renderPlaylistTracks();
+        }
+
+        function renderPaginationControls(totalPages) {
+            const paginationDiv = document.getElementById('paginationControls');
+            if (totalPages <= 1) {
+                paginationDiv.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            
+            const prevDisabled = currentPage === 1 ? 'disabled class="px-2 py-1 text-gray-600 cursor-not-allowed"' : `onclick="changePage(${currentPage - 1})" class="px-2 py-1 text-brand hover:bg-white/10 rounded transition-colors"`;
+            html += `<button ${prevDisabled}><i data-lucide="chevron-left" class="w-5 h-5"></i></button>`;
+            
+            for (let i = 1; i <= totalPages; i++) {
+                if (i === 1 || i === totalPages || (i >= currentPage - 1 && i <= currentPage + 1)) {
+                    const activeClass = currentPage === i ? 'bg-brand text-black font-bold' : 'text-brand-text hover:bg-white/10';
+                    html += `<button onclick="changePage(${i})" class="w-8 h-8 flex items-center justify-center rounded text-sm transition-colors ${activeClass}">${i}</button>`;
+                } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    html += `<span class="px-1 text-brand-text">...</span>`;
+                }
+            }
+
+            const nextDisabled = currentPage === totalPages ? 'disabled class="px-2 py-1 text-gray-600 cursor-not-allowed"' : `onclick="changePage(${currentPage + 1})" class="px-2 py-1 text-brand hover:bg-white/10 rounded transition-colors"`;
+            html += `<button ${nextDisabled}><i data-lucide="chevron-right" class="w-5 h-5"></i></button>`;
+
+            paginationDiv.innerHTML = html;
+        }
+
+        function toggleSelectAll() {
+            const isChecked = document.getElementById('selectAll').checked;
+            const checkboxes = document.querySelectorAll('.track-checkbox');
+            checkboxes.forEach(cb => cb.checked = isChecked);
+            updateDownloadButtonText();
+        }
+
+        function updateDownloadButtonText() {
+            const checkedCount = document.querySelectorAll('.track-checkbox:checked').length;
+            const btns = [document.getElementById('btnDownloadSelectedMp3'), document.getElementById('btnDownloadSelectedFlac')];
+            
+            if (checkedCount > 0) {
+                btns.forEach(btn => {
+                    const isFlac = btn.id.includes('Flac');
+                    btn.querySelector('.batch-text').innerText = `Unduh ${checkedCount} ${isFlac ? 'FLAC' : 'MP3'}`;
+                    btn.querySelector('.batch-icon').setAttribute('data-lucide', 'download-cloud');
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btn.classList.add('hover:scale-105');
+                });
+            } else {
+                btns.forEach(btn => {
+                    btn.querySelector('.batch-text').innerText = 'Pilih Lagu';
+                    btn.querySelector('.batch-icon').setAttribute('data-lucide', 'check-square');
+                    btn.disabled = true;
+                    btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    btn.classList.remove('hover:scale-105');
+                });
+            }
+            lucide.createIcons();
+            
+            const allCheckboxes = document.querySelectorAll('.track-checkbox').length;
+            const selectAllBtn = document.getElementById('selectAll');
+            if(allCheckboxes > 0) selectAllBtn.checked = (checkedCount === allCheckboxes);
+        }
+
+        async function downloadSelectedTracks(format = 'mp3') {
+            if (isDownloading) {
+                alert("Proses unduhan lain sedang berjalan. Harap tunggu.");
+                return;
+            }
+
+            const checkboxes = document.querySelectorAll('.track-checkbox:checked');
+            if (checkboxes.length === 0) return;
+
+            const btns = [document.getElementById('btnDownloadSelectedMp3'), document.getElementById('btnDownloadSelectedFlac')];
+            btns.forEach(btn => btn.disabled = true);
+            
+            const mainBtn = format === 'mp3' ? btns[0] : btns[1];
+            
+            for (let i = 0; i < checkboxes.length; i++) {
+                const trackId = checkboxes[i].value;
+                mainBtn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> (${i+1}/${checkboxes.length}) Mengunduh...`;
+                lucide.createIcons();
+                
+                const row = document.getElementById(`row_${trackId}`);
+                row.classList.add('bg-white/10'); 
+
+                await downloadSpotifyAudio(`t_title_${trackId}`, `t_artist_${trackId}`, `btn_${trackId}_${format}`, format, true);
+                
+                row.classList.remove('bg-white/10');
+                await new Promise(r => setTimeout(r, 1000)); 
+            }
+
+            mainBtn.innerHTML = `<i data-lucide="check-circle" class="w-5 h-5"></i> Selesai!`;
+            lucide.createIcons();
+            
+            document.getElementById('selectAll').checked = false;
+            toggleSelectAll();
+            setTimeout(() => { updateDownloadButtonText(); }, 3000);
+        }
+
+        function simulateProgress(progressBar) {
+            let width = 0;
+            return setInterval(() => {
+                if(width < 90) { width += Math.random() * 5; progressBar.style.width = width + '%'; }
+            }, 500);
+        }
+
+        function downloadSpotifyAudio(titleId, artistId, btnId, format = 'mp3', isFromQueue = false) {
+            return new Promise(async (resolve) => {
+                if (isDownloading && !isFromQueue) {
+                    alert("Sedang mengunduh lagu lain. Harap tunggu."); resolve(); return;
+                }
+                isDownloading = true;
+
+                const title = document.getElementById(titleId).innerText;
+                const artist = document.getElementById(artistId).innerText;
+                const btn = document.getElementById(btnId);
+                const progressBar = btn.querySelector('.download-progress');
+                const spanText = btn.querySelector('span');
+                const originalContent = spanText.innerHTML;
+
+                spanText.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>`;
+                const originalBg = btn.className.match(/bg-[a-zA-Z0-9-]+/)[0];
+                const originalHover = btn.className.match(/hover:bg-[a-zA-Z0-9-]+/)[0];
+                btn.classList.replace(originalBg, 'bg-yellow-500');
+                btn.classList.replace(originalHover, 'hover:bg-yellow-400');
+                lucide.createIcons();
+                
+                const progressInterval = simulateProgress(progressBar);
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/download`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mode: 'spotify', track_name: title, artist_name: artist, audio_format: format })
+                    });
+
+                    if (!response.ok) throw new Error('Gagal dari server');
+
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${title} - ${artist}.${format}`;
+                    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+
+                    clearInterval(progressInterval); progressBar.style.width = '100%';
+                    spanText.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i>`;
+                    btn.classList.replace('bg-yellow-500', originalBg);
+                    btn.classList.replace('hover:bg-yellow-400', originalHover);
+
+                } catch (error) {
+                    clearInterval(progressInterval); progressBar.style.width = '0%';
+                    spanText.innerHTML = `<i data-lucide="x" class="w-4 h-4"></i>`;
+                    btn.classList.replace('bg-yellow-500', 'bg-red-500');
+                    btn.classList.replace('hover:bg-yellow-400', 'hover:bg-red-400');
+                } finally {
+                    lucide.createIcons();
+                    setTimeout(() => { 
+                        isDownloading = false; 
+                        progressBar.style.width = '0%';
+                        spanText.innerHTML = originalContent;
+                        btn.className = btn.className.replace(/bg-red-500|bg-yellow-500/g, originalBg).replace(/hover:bg-red-400|hover:bg-yellow-400/g, originalHover);
+                        lucide.createIcons();
+                        resolve(); 
+                    }, 2000);
+                }
+            });
+        }
+
+        async function downloadVideo(format, btnId) {
+            if (isDownloading) {
+                alert("Sedang mengunduh file lain. Harap tunggu."); return;
+            }
+            if (!activeVideoUrl) return;
+            isDownloading = true;
+
+            const btn = document.getElementById(btnId);
+            const progressBar = btn.querySelector('.download-progress');
+            const spanText = btn.querySelector('span');
+            const originalContent = spanText.innerHTML;
+
+            spanText.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Memproses...`;
+            const originalBg = btn.className.match(/bg-\S+/)[0];
+            const originalHover = btn.className.match(/hover:bg-\S+/)[0];
+            btn.classList.replace(originalBg, 'bg-yellow-500');
+            btn.classList.replace(originalHover, 'hover:bg-yellow-400');
+            lucide.createIcons();
+            
+            const progressInterval = simulateProgress(progressBar);
+
+            try {
+                const title = document.getElementById('videoTitle').innerText;
+                const resSelect = document.getElementById('videoResolutionSelect').value;
+                const audSelect = document.getElementById('audioQualitySelect').value;
+
+                const response = await fetch(`${API_BASE_URL}/download`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        mode: 'direct', 
+                        url: activeVideoUrl, 
+                        format: format, 
+                        title: title,
+                        resolution: resSelect,
+                        audio_quality: audSelect
+                    })
+                });
+
+                if (!response.ok) throw new Error('Gagal mengunduh dari server');
+
+                const blob = await response.blob();
+                const urlObj = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = urlObj;
+                
+                const cleanTitle = title.replace(/[^a-zA-Z0-9 -]/g, "");
+                a.download = `${cleanTitle}.${format}`;
+                
+                document.body.appendChild(a); a.click(); document.body.removeChild(a);
+                window.URL.revokeObjectURL(urlObj);
+
+                clearInterval(progressInterval); progressBar.style.width = '100%';
+                spanText.innerHTML = `<i data-lucide="check" class="w-5 h-5"></i> Selesai!`;
+                btn.classList.replace('bg-yellow-500', originalBg);
+                btn.classList.replace('hover:bg-yellow-400', originalHover);
+
+            } catch (error) {
+                clearInterval(progressInterval); progressBar.style.width = '0%';
+                spanText.innerHTML = `<i data-lucide="x" class="w-5 h-5"></i> Gagal`;
+                btn.classList.replace('bg-yellow-500', 'bg-red-500');
+                btn.classList.replace('hover:bg-yellow-400', 'hover:bg-red-400');
+                alert("Gagal mengunduh: " + error.message);
+            } finally {
+                lucide.createIcons();
+                setTimeout(() => { 
+                    isDownloading = false; 
+                    progressBar.style.width = '0%';
+                    spanText.innerHTML = originalContent;
+                    btn.className = btn.className.replace(/bg-red-500|bg-yellow-500/g, originalBg).replace(/hover:bg-red-400|hover:bg-yellow-400/g, originalHover);
+                    lucide.createIcons();
+                }, 3000);
+            }
+        }
+
+        document.getElementById('urlInput').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') processUrl();
+        });
+    </script>
+</body>
+</html>
