@@ -6,7 +6,6 @@
     <title>All-in-One Downloader Ultimate</title>
 	<link href="img/logo.png" rel="icon">
     
-    <!-- Google Fonts & Tailwind -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -39,7 +38,6 @@
 </head>
 <body class="bg-brand-dark text-white font-sans min-h-screen flex flex-col selection:bg-brand selection:text-black">
 
-    <!-- Navbar -->
     <nav class="w-full px-4 py-3 border-b border-white/10 bg-brand-dark/90 backdrop-blur-md sticky top-0 z-50">
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
             <div class="flex items-center gap-2 text-white hover:text-brand transition-colors cursor-pointer w-full md:w-1/3" onclick="resetApp()">
@@ -49,12 +47,12 @@
                 <span class="font-bold text-xl tracking-tight hidden sm:block">AIO Downloader <span class="text-xs text-brand font-normal border border-brand px-1 rounded ml-1">VIP</span></span>
             </div>
             
-            <!-- Mode Toggle (Hanya tampil untuk Spotify) -->
-            <div id="spotifyModeToggle" class="flex bg-black/50 border border-white/10 p-1 rounded-full w-full sm:w-auto justify-center">
-                <button id="btnModeTrack" onclick="switchSpotifyMode('track')" class="flex-1 sm:flex-none px-6 py-2 rounded-full bg-brand text-black font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg">
-                    <i data-lucide="music" class="w-4 h-4"></i> Lagu (Track)
+            <!-- Mode Toggle (Tampil untuk Spotify & YouTube) -->
+            <div id="mediaModeToggle" class="flex bg-black/50 border border-white/10 p-1 rounded-full w-full sm:w-auto justify-center">
+                <button id="btnModeSingle" onclick="switchMediaMode('single')" class="flex-1 sm:flex-none px-6 py-2 rounded-full bg-brand text-black font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg">
+                    <i data-lucide="music" id="iconModeSingle" class="w-4 h-4"></i> <span id="textModeSingle">Lagu (Track)</span>
                 </button>
-                <button id="btnModePlaylist" onclick="switchSpotifyMode('playlist')" class="flex-1 sm:flex-none px-6 py-2 rounded-full text-brand-text hover:text-white font-medium text-sm transition-all flex items-center justify-center gap-2">
+                <button id="btnModePlaylist" onclick="switchMediaMode('playlist')" class="flex-1 sm:flex-none px-6 py-2 rounded-full text-brand-text hover:text-white font-medium text-sm transition-all flex items-center justify-center gap-2">
                     <i data-lucide="list-music" class="w-4 h-4"></i> Playlist
                 </button>
             </div>
@@ -63,11 +61,9 @@
     </nav>
 
     <main class="flex-grow">
-        <!-- Input Area -->
         <section class="relative pt-10 pb-12 px-6 bg-gradient-animate border-b border-white/5">
             <div class="max-w-3xl mx-auto text-center relative z-10">
                 
-                <!-- Platform Selector -->
                 <div class="flex flex-wrap justify-center gap-2 mb-8" id="platformSelector">
                     <button onclick="setPlatform('spotify', this, '#1DB954')" class="platform-btn bg-[#1DB954] text-black px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"><i data-lucide="music"></i> Spotify</button>
                     <button onclick="setPlatform('youtube', this, '#FF0000')" class="platform-btn bg-white/10 text-white hover:bg-white/20 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"><i data-lucide="youtube"></i> YouTube</button>
@@ -97,11 +93,9 @@
             </div>
         </section>
 
-        <!-- Result Area -->
         <section id="resultSection" class="hidden py-8 px-4 md:px-6">
             <div class="max-w-4xl mx-auto">
                 
-                <!-- Loader -->
                 <div id="loadingState" class="hidden flex-col items-center justify-center py-16">
                     <div class="relative w-20 h-20 mb-6">
                         <div class="absolute inset-0 border-4 border-brand/20 border-t-brand rounded-full animate-spin"></div>
@@ -111,7 +105,7 @@
                     <p class="text-brand-text text-sm">Sedang mengekstrak data dari server</p>
                 </div>
 
-                <!-- Generic Video Card (YT, FB, IG, TT) -->
+                <!-- Generic Video Card -->
                 <div id="videoCard" class="hidden bg-brand-card rounded-2xl border border-white/10 p-6 md:p-8 flex-col md:flex-row gap-6 items-center shadow-xl">
                     <div class="w-full md:w-64 aspect-video rounded-lg overflow-hidden flex-shrink-0 shadow-lg bg-black relative">
                         <img id="videoImage" src="" alt="Thumbnail" class="w-full h-full object-cover">
@@ -122,18 +116,14 @@
                         <h3 id="videoTitle" class="text-xl md:text-2xl font-bold mb-6 line-clamp-2">Judul Video</h3>
                         
                         <div class="flex flex-col gap-3 justify-center md:justify-start mt-2">
-                            <!-- Grup Unduhan Video -->
                             <div class="flex flex-col sm:flex-row gap-2">
                                 <select id="videoResolutionSelect" class="bg-black/50 border border-white/10 rounded-lg px-3 py-3 text-sm text-white focus:outline-none focus:border-brand cursor-pointer w-full sm:w-1/3">
-                                    <!-- Options generated by JS -->
                                 </select>
                                 <button id="btnDownloadMp4" onclick="downloadVideo('mp4', 'btnDownloadMp4')" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 group relative overflow-hidden flex-1">
                                     <span class="relative z-10 flex items-center gap-2"><i data-lucide="video" class="w-5 h-5"></i> Unduh MP4</span>
                                     <div class="absolute left-0 top-0 h-full bg-white/30 w-0 transition-all duration-300 download-progress"></div>
                                 </button>
                             </div>
-
-                            <!-- Grup Unduhan Audio -->
                             <div class="flex flex-col sm:flex-row gap-2">
                                 <select id="audioQualitySelect" class="bg-black/50 border border-white/10 rounded-lg px-3 py-3 text-sm text-white focus:outline-none focus:border-brand cursor-pointer w-full sm:w-1/3">
                                     <option value="320">320 kbps (Terbaik)</option>
@@ -149,7 +139,6 @@
                     </div>
                 </div>
 
-                <!-- Spotify Single Track Card -->
                 <div id="singleTrackCard" class="hidden bg-brand-card rounded-2xl border border-white/10 p-6 md:p-8 flex-col md:flex-row gap-6 items-center shadow-xl">
                     <div class="w-40 h-40 md:w-48 md:h-48 rounded-lg overflow-hidden flex-shrink-0 shadow-lg bg-black">
                         <img id="singleTrackImage" src="" alt="Cover" class="w-full h-full object-cover">
@@ -160,13 +149,14 @@
                         <p id="singleTrackArtist" class="text-brand-text font-medium mb-6">Nama Artis</p>
                         
                         <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                            <button id="btnDownloadSingleMp3" onclick="downloadSpotifyAudio('singleTrackTitle', 'singleTrackArtist', 'btnDownloadSingleMp3', 'mp3')" class="w-full sm:flex-1 bg-brand hover:bg-brand-hover text-black font-bold py-4 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 group relative overflow-hidden">
+                            <!-- Update passing param for single track via search -->
+                            <button id="btnDownloadSingleMp3" onclick="triggerSingleDownload('mp3')" class="w-full sm:flex-1 bg-brand hover:bg-brand-hover text-black font-bold py-4 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 group relative overflow-hidden">
                                 <span class="relative z-10 flex items-center gap-2">
                                     <i data-lucide="music" class="w-5 h-5"></i> Unduh MP3
                                 </span>
                                 <div class="absolute left-0 top-0 h-full bg-white/30 w-0 transition-all duration-300 download-progress"></div>
                             </button>
-                            <button id="btnDownloadSingleFlac" onclick="downloadSpotifyAudio('singleTrackTitle', 'singleTrackArtist', 'btnDownloadSingleFlac', 'flac')" class="w-full sm:flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 group relative overflow-hidden">
+                            <button id="btnDownloadSingleFlac" onclick="triggerSingleDownload('flac')" class="w-full sm:flex-1 bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 group relative overflow-hidden">
                                 <span class="relative z-10 flex items-center gap-2">
                                     <i data-lucide="disc" class="w-5 h-5"></i> Unduh FLAC
                                 </span>
@@ -176,16 +166,15 @@
                     </div>
                 </div>
 
-                <!-- Spotify Playlist Card -->
                 <div id="playlistCard" class="hidden flex flex-col gap-6">
                     <div class="bg-brand-card rounded-2xl border border-white/10 p-6 flex flex-col sm:flex-row items-center sm:items-end gap-6 relative overflow-hidden">
                         <div class="w-32 h-32 md:w-40 md:h-40 rounded shadow-2xl z-10 flex-shrink-0 bg-black">
                             <img id="playlistImage" src="" class="w-full h-full object-cover rounded">
                         </div>
                         <div class="z-10 text-center sm:text-left flex-grow">
-                            <span class="text-xs font-bold uppercase tracking-wider text-brand mb-2">Playlist Resmi Ditemukan</span>
+                            <span id="playlistTypeBadge" class="text-xs font-bold uppercase tracking-wider text-brand mb-2">Playlist Resmi Ditemukan</span>
                             <h2 id="playlistTitle" class="text-3xl md:text-4xl font-extrabold tracking-tight mb-2 line-clamp-2">Nama Playlist</h2>
-                            <p class="text-brand-text text-sm mb-4"><span id="playlistTrackCount">0</span> lagu berhasil dimuat via Embed Data</p>
+                            <p class="text-brand-text text-sm mb-4"><span id="playlistTrackCount">0</span> lagu berhasil dimuat ke dalam antrean</p>
                             
                             <div class="flex flex-col sm:flex-row gap-2 items-center mx-auto sm:mx-0 w-full sm:w-auto">
                                 <button id="btnDownloadSelectedMp3" onclick="downloadSelectedTracks('mp3')" disabled class="opacity-50 cursor-not-allowed bg-brand text-black font-bold py-2.5 px-6 rounded-full transition-all flex items-center justify-center gap-2 w-full sm:w-auto">
@@ -199,7 +188,6 @@
                     </div>
                     
                     <div class="bg-brand-dark/50 rounded-2xl border border-white/5 overflow-hidden">
-                        
                         <div class="flex flex-col md:flex-row justify-between items-center gap-4 px-4 py-4 border-b border-white/5">
                             <div class="relative w-full md:w-1/2">
                                 <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-brand-text"></i>
@@ -222,7 +210,7 @@
                             <div class="text-center">#</div> 
                             <div>Judul & Artis</div> 
                             <div class="hidden md:block">Durasi</div> 
-                            <div class="text-center">Unduh</div>
+                            <div class="text-center">Unduh Audio</div>
                         </div>
                         <div id="playlistTracksContainer" class="flex flex-col max-h-[600px] overflow-y-auto">
                             <!-- Tracks generated by JS -->
@@ -241,7 +229,7 @@
     <script>
         lucide.createIcons();
         let currentPlatform = 'spotify';
-        let currentSpotifyMode = 'track';
+        let currentMediaMode = 'single'; 
         let isDownloading = false;
         let activeVideoUrl = '';
 
@@ -250,12 +238,11 @@
         let currentPage = 1;
         let itemsPerPage = 10;
 
-        // Otomatis mendeteksi domain/IP saat ini dan menggunakan port 5000 untuk backend Flask
 		const API_BASE_URL = 'http://100.64.74.0:5000';
 
         const platformThemes = {
-            'spotify': { color: '#1DB954', text: 'black' },
-            'youtube': { color: '#FF0000', text: 'white' },
+            'spotify': { color: '#1DB954', text: 'black', singleLabel: 'Lagu (Track)', singleIcon: 'music' },
+            'youtube': { color: '#FF0000', text: 'white', singleLabel: 'Single Video', singleIcon: 'video' },
             'facebook': { color: '#1877F2', text: 'white' },
             'instagram': { color: '#E1306C', text: 'white' },
             'tiktok': { color: '#00f2fe', text: 'black' }
@@ -273,29 +260,34 @@
             document.getElementById('urlInput').placeholder = `Tempel URL ${platform.charAt(0).toUpperCase() + platform.slice(1)} di sini...`;
             document.getElementById('heroTitle').innerHTML = `Unduh <span class="text-[${colorCode}]">${platform.charAt(0).toUpperCase() + platform.slice(1)}</span> Gratis`;
             
-            const spotifyToggle = document.getElementById('spotifyModeToggle');
-            if(platform === 'spotify') {
-                spotifyToggle.classList.remove('hidden');
-                spotifyToggle.classList.add('flex');
+            const mediaToggle = document.getElementById('mediaModeToggle');
+            if(platform === 'spotify' || platform === 'youtube') {
+                mediaToggle.classList.remove('hidden');
+                mediaToggle.classList.add('flex');
+                
+                // Update Text Toggle Based on Platform
+                document.getElementById('textModeSingle').innerText = platformThemes[platform].singleLabel;
+                document.getElementById('iconModeSingle').setAttribute('data-lucide', platformThemes[platform].singleIcon);
+                lucide.createIcons();
             } else {
-                spotifyToggle.classList.add('hidden');
-                spotifyToggle.classList.remove('flex');
+                mediaToggle.classList.add('hidden');
+                mediaToggle.classList.remove('flex');
             }
 
             resetApp();
         }
 
-        function switchSpotifyMode(mode) {
-            currentSpotifyMode = mode;
-            const btnTrack = document.getElementById('btnModeTrack');
+        function switchMediaMode(mode) {
+            currentMediaMode = mode;
+            const btnSingle = document.getElementById('btnModeSingle');
             const btnPlaylist = document.getElementById('btnModePlaylist');
             
-            if (mode === 'track') {
-                btnTrack.className = "flex-1 sm:flex-none px-6 py-2 rounded-full bg-brand text-black font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg";
+            if (mode === 'single') {
+                btnSingle.className = "flex-1 sm:flex-none px-6 py-2 rounded-full bg-brand text-black font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg";
                 btnPlaylist.className = "flex-1 sm:flex-none px-6 py-2 rounded-full text-brand-text hover:text-white font-medium text-sm transition-all flex items-center justify-center gap-2";
             } else {
                 btnPlaylist.className = "flex-1 sm:flex-none px-6 py-2 rounded-full bg-brand text-black font-bold text-sm transition-all flex items-center justify-center gap-2 shadow-lg";
-                btnTrack.className = "flex-1 sm:flex-none px-6 py-2 rounded-full text-brand-text hover:text-white font-medium text-sm transition-all flex items-center justify-center gap-2";
+                btnSingle.className = "flex-1 sm:flex-none px-6 py-2 rounded-full text-brand-text hover:text-white font-medium text-sm transition-all flex items-center justify-center gap-2";
             }
             resetApp();
         }
@@ -343,7 +335,11 @@
                 const response = await fetch(`${API_BASE_URL}/info`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: input, platform: currentPlatform })
+                    body: JSON.stringify({ 
+                        url: input, 
+                        platform: currentPlatform, 
+                        media_mode: currentMediaMode 
+                    })
                 });
 
                 const data = await response.json();
@@ -361,6 +357,15 @@
                     document.getElementById('playlistTitle').innerText = data.title;
                     document.getElementById('playlistImage').src = data.cover;
                     document.getElementById('playlistTrackCount').innerText = data.total;
+                    
+                    const badge = document.getElementById('playlistTypeBadge');
+                    if(data.platform === 'YouTube') {
+                        badge.innerText = "YouTube Playlist";
+                        badge.style.color = "#FF0000";
+                    } else {
+                        badge.innerText = "Spotify Playlist";
+                        badge.style.color = "#1DB954";
+                    }
                     
                     document.getElementById('selectAll').checked = false;
                     updateDownloadButtonText();
@@ -436,6 +441,8 @@
                     const row = document.createElement('div');
                     row.id = `row_${safeId}`;
                     row.className = "grid grid-cols-[30px_30px_minmax(120px,1fr)_90px] md:grid-cols-[40px_40px_minmax(150px,1fr)_minmax(100px,150px)_120px] gap-4 px-4 py-3 hover:bg-white/5 border-b border-white/5 items-center transition-colors";
+                    
+                    // Unified Download buttons passing Track ID
                     row.innerHTML = `
                         <div class="flex justify-center">
                             <input type="checkbox" class="track-checkbox w-4 h-4 accent-brand cursor-pointer" value="${safeId}" onchange="updateDownloadButtonText()">
@@ -444,17 +451,17 @@
                         <div class="flex items-center gap-3 overflow-hidden">
                             <img src="${track.img}" class="w-10 h-10 rounded object-cover shadow bg-black shrink-0 hidden sm:block">
                             <div class="flex flex-col truncate">
-                                <span id="t_title_${safeId}" class="font-bold text-white truncate text-sm md:text-base">${track.title}</span>
-                                <span id="t_artist_${safeId}" class="text-xs md:text-sm text-brand-text truncate">${track.artist}</span>
+                                <span class="font-bold text-white truncate text-sm md:text-base">${track.title}</span>
+                                <span class="text-xs md:text-sm text-brand-text truncate">${track.artist}</span>
                             </div>
                         </div>
                         <div class="text-sm text-brand-text hidden md:block">${track.duration}</div>
                         <div class="flex justify-center gap-1 md:gap-2">
-                            <button id="btn_${safeId}_mp3" onclick="downloadSpotifyAudio('t_title_${safeId}', 't_artist_${safeId}', 'btn_${safeId}_mp3', 'mp3')" class="bg-brand hover:bg-brand-hover text-black font-bold py-1.5 px-2 md:px-3 rounded text-xs transition-colors flex items-center justify-center relative overflow-hidden group w-full" title="Unduh MP3">
+                            <button id="btn_${safeId}_mp3" onclick="downloadAudioFromPlaylist('${safeId}', 'mp3')" class="bg-brand hover:bg-brand-hover text-black font-bold py-1.5 px-2 md:px-3 rounded text-xs transition-colors flex items-center justify-center relative overflow-hidden group w-full" title="Unduh MP3">
                                 <span class="relative z-10 flex items-center justify-center">MP3</span>
                                 <div class="absolute left-0 top-0 h-full bg-white/30 w-0 transition-all duration-300 download-progress"></div>
                             </button>
-                            <button id="btn_${safeId}_flac" onclick="downloadSpotifyAudio('t_title_${safeId}', 't_artist_${safeId}', 'btn_${safeId}_flac', 'flac')" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-1.5 px-2 md:px-3 rounded text-xs transition-colors flex items-center justify-center relative overflow-hidden group w-full" title="Unduh FLAC">
+                            <button id="btn_${safeId}_flac" onclick="downloadAudioFromPlaylist('${safeId}', 'flac')" class="bg-purple-600 hover:bg-purple-500 text-white font-bold py-1.5 px-2 md:px-3 rounded text-xs transition-colors flex items-center justify-center relative overflow-hidden group w-full" title="Unduh FLAC">
                                 <span class="relative z-10 flex items-center justify-center">FLAC</span>
                                 <div class="absolute left-0 top-0 h-full bg-white/30 w-0 transition-all duration-300 download-progress"></div>
                             </button>
@@ -499,7 +506,6 @@
             }
 
             let html = '';
-            
             const prevDisabled = currentPage === 1 ? 'disabled class="px-2 py-1 text-gray-600 cursor-not-allowed"' : `onclick="changePage(${currentPage - 1})" class="px-2 py-1 text-brand hover:bg-white/10 rounded transition-colors"`;
             html += `<button ${prevDisabled}><i data-lucide="chevron-left" class="w-5 h-5"></i></button>`;
             
@@ -576,7 +582,7 @@
                 const row = document.getElementById(`row_${trackId}`);
                 row.classList.add('bg-white/10'); 
 
-                await downloadSpotifyAudio(`t_title_${trackId}`, `t_artist_${trackId}`, `btn_${trackId}_${format}`, format, true);
+                await downloadAudioFromPlaylist(trackId, format, true);
                 
                 row.classList.remove('bg-white/10');
                 await new Promise(r => setTimeout(r, 1000)); 
@@ -597,15 +603,31 @@
             }, 500);
         }
 
-        function downloadSpotifyAudio(titleId, artistId, btnId, format = 'mp3', isFromQueue = false) {
+        function triggerSingleDownload(format) {
+            const title = document.getElementById('singleTrackTitle').innerText;
+            const artist = document.getElementById('singleTrackArtist').innerText;
+            const btnId = format === 'mp3' ? 'btnDownloadSingleMp3' : 'btnDownloadSingleFlac';
+            
+            // Dummy track object for single mode payload compatibility
+            const dummyTrack = { id: 'single', title: title, artist: artist, url: '' }; 
+            
+            executeAudioDownloadRequest(dummyTrack, btnId, format, false);
+        }
+
+        function downloadAudioFromPlaylist(trackId, format = 'mp3', isFromQueue = false) {
+            const track = currentPlaylistTracks.find(t => t.id === trackId);
+            if(!track) return Promise.resolve();
+            const btnId = `btn_${trackId}_${format}`;
+            return executeAudioDownloadRequest(track, btnId, format, isFromQueue);
+        }
+
+        function executeAudioDownloadRequest(track, btnId, format, isFromQueue) {
             return new Promise(async (resolve) => {
                 if (isDownloading && !isFromQueue) {
                     alert("Sedang mengunduh lagu lain. Harap tunggu."); resolve(); return;
                 }
                 isDownloading = true;
 
-                const title = document.getElementById(titleId).innerText;
-                const artist = document.getElementById(artistId).innerText;
                 const btn = document.getElementById(btnId);
                 const progressBar = btn.querySelector('.download-progress');
                 const spanText = btn.querySelector('span');
@@ -620,22 +642,35 @@
                 
                 const progressInterval = simulateProgress(progressBar);
 
+                // Smart Payload Construction: Spotify uses Search, YT uses Direct URL.
+                const payload = {
+                    mode: track.url ? 'direct' : 'spotify',
+                    track_name: track.title,
+                    artist_name: track.artist,
+                    audio_format: format,
+                    // Attributes required for direct mode fallback
+                    url: track.url, 
+                    title: `${track.title} - ${track.artist}`,
+                    format: format,
+                    audio_quality: '192' 
+                };
+
                 try {
                     const response = await fetch(`${API_BASE_URL}/download`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ mode: 'spotify', track_name: title, artist_name: artist, audio_format: format })
+                        body: JSON.stringify(payload)
                     });
 
                     if (!response.ok) throw new Error('Gagal dari server');
 
                     const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
+                    const urlObj = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${title} - ${artist}.${format}`;
+                    a.href = urlObj;
+                    a.download = `${track.title} - ${track.artist}.${format}`.replace(/[^a-zA-Z0-9 \-_.]/g, "");
                     document.body.appendChild(a); a.click(); document.body.removeChild(a);
-                    window.URL.revokeObjectURL(url);
+                    window.URL.revokeObjectURL(urlObj);
 
                     clearInterval(progressInterval); progressBar.style.width = '100%';
                     spanText.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i>`;

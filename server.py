@@ -4,45 +4,37 @@ import requests
 import json
 import glob
 import time
-# Tambahkan render_template di baris import ini
 from flask import Flask, request, send_file, jsonify, after_this_request, render_template
 from flask_cors import CORS
 import yt_dlp
 
-# Beri tahu Flask bahwa folder template-nya sekarang bernama 'mains'
 app = Flask(__name__, template_folder='mains')
-# Mengizinkan file HTML kita untuk mengakses server ini
 CORS(app) 
 
 @app.route('/')
 def index():
-    # Menggunakan render_template, dan Flask akan mencarinya di folder 'mains'
     return render_template('index.html')
 
 @app.route('/info', methods=['POST'])
 def get_info():
     url = request.json.get('url', '')
     platform = request.json.get('platform', 'spotify').lower()
+    media_mode = request.json.get('media_mode', 'single') # 'single' or 'playlist'
     
     if platform == 'spotify':
-        # Deteksi ID dan Tipe dari URL Spotify
         match = re.search(r'(track|playlist|album)/([a-zA-Z0-9]+)', url)
         if not match:
             return jsonify({'error': 'Tautan Spotify tidak valid.'}), 400
             
         entity_type = match.group(1)
         entity_id = match.group(2)
-        
-        # FIX: Metode Scraping Embed Tanpa Token
         embed_url = f"https://open.spotify.com/embed/{entity_type}/{entity_id}"
         
         try:
             headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
             res = requests.get(embed_url, headers=headers)
             
-            # Ekstrak data JSON mentah yang tersembunyi dari halaman HTML
             next_data_match = re.search(r'<script id="__NEXT_DATA__" type="application/json">(.*?)</script>', res.text)
-            
             if not next_data_match:
                 return jsonify({'error': 'Gagal mengekstrak data dari Spotify Embed.'}), 500
                 
@@ -52,7 +44,6 @@ def get_info():
             if not entity:
                 return jsonify({'error': 'Data lagu/playlist tidak ditemukan.'}), 404
                 
-            # Ambil Judul & Cover Utama
             title = entity.get('name', 'Unknown Title')
             
             cover_url = ''
@@ -71,22 +62,17 @@ def get_info():
                 
             elif entity_type in ['playlist', 'album']:
                 track_list = []
-                # Embed API menyimpan track di dalam 'trackList'
                 tracks = entity.get('trackList', []) 
                 
                 for t in tracks:
                     dur_ms = t.get('duration', 0)
-                    
-                    # Coba cari cover individual, jika gagal, paksakan pakai Cover Playlist
-                    # agar gambar tidak kosong.
-                    t_cover = cover_url 
-                    
                     track_list.append({
                         'id': t.get('id', 'unknown'),
                         'title': t.get('title', 'Unknown'),
                         'artist': t.get('subtitle', 'Unknown Artist'),
                         'duration': f"{dur_ms // 60000}:{(dur_ms // 1000) % 60:02d}",
-                        'img': t_cover
+                        'img': cover_url,
+                        'url': '' # Kosong karena Spotify akan dicari via ytsearch
                     })
 
                 return jsonify({
@@ -99,20 +85,94 @@ def get_info():
         except Exception as e:
             return jsonify({'error': f"Kesalahan sistem (Spotify): {str(e)}"}), 500
 
-    else:
-        # Penanganan untuk YouTube, Facebook, Instagram, TikTok menggunakan yt-dlp info extractor
+    elif platform == 'youtube':
+        # Yt-Dlp Options menyesuaikan mode (Playlist vs Single)
         ydl_opts = {
             'quiet': True, 
-            'noplaylist': True,
-            'extract_flat': False # Paksa ambil metadata penuh
+            'extract_flat': True if media_mode == 'playlist' else False,
+            'noplaylist': False if media_mode == 'playlist' else True,
         }
+        
+        try:
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                
+                if media_mode == 'playlist' and 'entries' in info:
+                    playlist_title = info.get('title', 'YouTube Playlist')
+                    # Ambil thumbnail playlist jika ada
+                    cover_url = info.get('thumbnails', [{'url': 'https://placehold.co/600x600/121212/ffffff?text=Playlist'}])[-1]['url']
+                    
+                    track_list = []
+                    for idx, entry in enumerate(info.get('entries', [])):
+                        if not entry: continue
+                        
+                        dur = entry.get('duration')
+                        dur_str = f"{int(dur//60)}:{int(dur%60):02d}" if dur else "-:-"
+                        
+                        t_thumb = cover_url
+                        if entry.get('thumbnails'):
+                            t_thumb = entry['thumbnails'][-1]['url']
+                            
+                        vid_id = entry.get('id', f'yt_{idx}')
+                        track_list.append({
+                            'id': vid_id,
+                            'title': entry.get('title', 'Unknown Video'),
+                            'artist': entry.get('uploader', entry.get('channel', 'Unknown Channel')),
+                            'duration': dur_str,
+                            'img': t_thumb,
+                            'url': entry.get('url', f"https://www.youtube.com/watch?v={vid_id}")
+                        })
+                        
+                    return jsonify({
+                        'type': 'playlist',
+                        'platform': 'YouTube',
+                        'title': playlist_title,
+                        'cover': cover_url,
+                        'total': len(track_list),
+                        'tracks': track_list
+                    })
+                
+                else:
+                    title = info.get('title', 'Video Tanpa Judul')
+                    thumbnail = info.get('thumbnail', '')
+                    
+                    if info.get('duration'):
+                        mins, secs = divmod(info.get('duration'), 60)
+                        duration_str = f"{int(mins)}:{int(secs):02d}"
+                    else:
+                        duration_str = info.get('duration_string', '-:-')
+                    
+                    available_resolutions = set()
+                    for f in info.get('formats', []):
+                        height = f.get('height')
+                        vcodec = f.get('vcodec')
+                        if height and isinstance(height, int) and vcodec and vcodec != 'none':
+                            available_resolutions.add(height)
+                    
+                    sorted_res = sorted(list(available_resolutions), reverse=True)
+                    resolutions_list = [f"{h}p" for h in sorted_res]
+                    if not resolutions_list: resolutions_list = ["best"]
+                    
+                    return jsonify({
+                        'type': 'video',
+                        'platform': 'YouTube',
+                        'title': title,
+                        'thumbnail': thumbnail,
+                        'duration': duration_str,
+                        'url': url,
+                        'resolutions': resolutions_list
+                    })
+        except Exception as e:
+            return jsonify({'error': f"Gagal mengekstrak YouTube. ({str(e)})"}), 500
+
+    else:
+        ydl_opts = {'quiet': True, 'noplaylist': True, 'extract_flat': False}
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info = ydl.extract_info(url, download=False)
                 
                 title = info.get('title', 'Video Tanpa Judul')
                 thumbnail = info.get('thumbnail', '')
-                duration_str = ''
                 
                 if info.get('duration'):
                     mins, secs = divmod(info.get('duration'), 60)
@@ -120,99 +180,56 @@ def get_info():
                 else:
                     duration_str = info.get('duration_string', '-:-')
                 
-                # Nama platform asli untuk estetika UI
-                platform_display = platform.capitalize()
-                if platform == 'youtube': platform_display = 'YouTube'
-                elif platform == 'tiktok': platform_display = 'TikTok'
-                
-                # Ekstrak resolusi video yang tersedia
-                available_resolutions = set()
-                for f in info.get('formats', []):
-                    height = f.get('height')
-                    vcodec = f.get('vcodec')
-                    # Hanya ambil format yang memiliki video stream dan informasi resolusi
-                    if height and isinstance(height, int) and vcodec and vcodec != 'none':
-                        available_resolutions.add(height)
-                
-                # Urutkan dari resolusi terbesar ke terkecil
-                sorted_res = sorted(list(available_resolutions), reverse=True)
-                resolutions_list = [f"{h}p" for h in sorted_res]
-                
-                # Fallback jika yt-dlp tidak mendeteksi list resolusi
-                if not resolutions_list:
-                    resolutions_list = ["best"]
-                
                 return jsonify({
                     'type': 'video',
-                    'platform': platform_display,
+                    'platform': platform.capitalize(),
                     'title': title,
                     'thumbnail': thumbnail,
                     'duration': duration_str,
                     'url': url,
-                    'resolutions': resolutions_list
+                    'resolutions': ['best']
                 })
         except Exception as e:
-            return jsonify({'error': f"Gagal mengekstrak video. Pastikan tautan bersifat publik. ({str(e)})"}), 500
+            return jsonify({'error': f"Gagal mengekstrak video. Pastikan publik. ({str(e)})"}), 500
 
 def cleanup_old_files():
-    """Fungsi ekstra untuk menghapus file sampah di dalam folder 'temp' yang tertinggal (Usia > 30 Menit)"""
-    # Buat folder temp jika belum ada
     if not os.path.exists('temp'):
         os.makedirs('temp')
-        
     now = time.time()
-    # Pindai hanya ke dalam folder temp/
     for f in glob.glob("temp/temp_*"):
         if os.path.isfile(f):
-            if now - os.path.getmtime(f) > 300: # 1800 detik = 30 menit
+            if now - os.path.getmtime(f) > 1000:
                 try: os.remove(f)
                 except: pass
 
 @app.route('/download', methods=['POST'])
 def download():
-    # Jalankan cleanup tiap kali ada request download baru agar disk server aman
     cleanup_old_files()
-
     data = request.json
-    mode = data.get('mode', 'spotify') # 'spotify' (ytsearch) atau 'direct' (yt-dlp langsung)
+    mode = data.get('mode', 'spotify') 
     
-    # Pastikan folder temp ada sebelum memproses unduhan
     if not os.path.exists('temp'):
         os.makedirs('temp')
         
-    # Nama file temporary diarahkan ke dalam folder temp/
     temp_filename = f"temp/temp_media_{os.urandom(4).hex()}"
     
     if mode == 'spotify':
         track_name = data.get('track_name', 'Unknown')
         artist_name = data.get('artist_name', 'Unknown')
-        audio_format = data.get('audio_format', 'mp3').lower() # Tangkap format yang diinginkan
+        audio_format = data.get('audio_format', 'mp3').lower()
         search_query = f"{track_name} {artist_name} audio"
         
-        if audio_format not in ['mp3', 'flac']:
-            audio_format = 'mp3'
+        if audio_format not in ['mp3', 'flac']: audio_format = 'mp3'
             
         ydl_opts = {
             'format': 'bestaudio/best',
             'outtmpl': f'{temp_filename}.%(ext)s',
-            'postprocessors': [{
-                'key': 'FFmpegExtractAudio',
-                'preferredcodec': audio_format,
-            }],
-            # Sisipkan metadata ID3 tag untuk Spotify Tracks
-            'postprocessor_args': {
-                'ffmpeg': [
-                    '-metadata', f'title={track_name}',
-                    '-metadata', f'artist={artist_name}'
-                ]
-            },
+            'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': audio_format}],
+            'postprocessor_args': {'ffmpeg': ['-metadata', f'title={track_name}', '-metadata', f'artist={artist_name}']},
             'noplaylist': True,
             'quiet': True
         }
-        
-        # Atur bitrate kualitas standar khusus untuk MP3 saja (FLAC bersifat lossless)
-        if audio_format == 'mp3':
-            ydl_opts['postprocessors'][0]['preferredquality'] = '192'
+        if audio_format == 'mp3': ydl_opts['postprocessors'][0]['preferredquality'] = '192'
 
         try:
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
@@ -221,7 +238,6 @@ def download():
             final_file = f"{temp_filename}.{audio_format}"
             nama_file_untuk_user = f"{track_name} - {artist_name}.{audio_format}"
             
-            # Hapus file secara instant setelah dikirimkan ke client
             @after_this_request
             def remove_file(response):
                 try: os.remove(final_file)
@@ -234,14 +250,12 @@ def download():
             return jsonify({'error': str(e)}), 500
 
     elif mode == 'direct':
-        # Eksekusi Unduhan untuk YT, FB, IG, TikTok
         url = data.get('url')
-        format_type = data.get('format', 'mp4') # 'mp4' atau 'mp3'
+        format_type = data.get('format', 'mp4') 
         title = data.get('title', 'Video')
         resolution = data.get('resolution', 'best')
         audio_quality = data.get('audio_quality', '192')
         
-        # Bersihkan judul dari karakter aneh untuk mencegah error OS saat save
         clean_title = "".join(x for x in title if x.isalnum() or x in " -_")
         if not clean_title: clean_title = "Download"
 
@@ -249,23 +263,24 @@ def download():
             'outtmpl': f'{temp_filename}.%(ext)s',
             'noplaylist': True,
             'quiet': True,
-            'merge_output_format': 'mp4' # Memastikan hasil akhir berbentuk MP4 jika formatnya terpisah
+            'merge_output_format': 'mp4'
         }
         
-        if format_type == 'mp3':
+        # Penambahan fitur unduh FLAC/MP3 untuk mode Direct (YouTube Playlist)
+        if format_type in ['mp3', 'flac']:
             ydl_opts['format'] = 'bestaudio/best'
             ydl_opts['postprocessors'] = [{
                 'key': 'FFmpegExtractAudio',
-                'preferredcodec': 'mp3',
-                'preferredquality': str(audio_quality),
+                'preferredcodec': format_type,
             }]
-            final_file = f"{temp_filename}.mp3"
-            download_name = f"{clean_title}.mp3"
+            if format_type == 'mp3':
+                ydl_opts['postprocessors'][0]['preferredquality'] = str(audio_quality)
+            
+            final_file = f"{temp_filename}.{format_type}"
+            download_name = f"{clean_title}.{format_type}"
         else:
-            # Video Format menyesuaikan kualitas yg dipilih pengguna
             if resolution != 'best':
                 res_int = resolution
-                # Formula yt-dlp: Ambil video dengan tinggi maksimal = pilihan pengguna + audio terbaik
                 ydl_opts['format'] = f'bestvideo[height<={res_int}][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<={res_int}]+bestaudio/best[height<={res_int}]/best'
             else:
                 ydl_opts['format'] = 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
@@ -277,7 +292,6 @@ def download():
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 ydl.extract_info(url, download=True)
                 
-            # Hapus file seketika setelah selesai transfer
             @after_this_request
             def remove_file(response):
                 try: os.remove(final_file)
