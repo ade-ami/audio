@@ -2,7 +2,7 @@
 // ==============================================================================
 // KONFIGURASI PATH ABSOLUT (UBAH JIKA PERLU)
 // ==============================================================================
-$yt_dlp_path = '"C:\ffmpeg\yt\yt-dlp.exe"';
+$yt_dlp_path = '"C:\ffmpeg\yt\yt-dlp_x86.exe"';
 $ffmpeg_path = '"C:\ffmpeg\bin\ffmpeg.exe"';
 
 // Set zona waktu
@@ -28,6 +28,10 @@ foreach ($files as $file) {
 $action = $_GET['action'] ?? '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Mencegah error PHP standar (berupa HTML) merusak output JSON
+    ini_set('display_errors', 0);
+    error_reporting(E_ALL);
+
     $inputJSON = file_get_contents('php://input');
     $data = json_decode($inputJSON, true);
     
@@ -37,28 +41,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'info') {
         header('Content-Type: application/json');
         
-        $url = $data['url'] ?? '';
-        $platform = strtolower($data['platform'] ?? 'spotify');
-        $media_mode = $data['media_mode'] ?? 'single';
-        
-        if ($platform === 'spotify') {
-            if (preg_match('/(track|playlist|album)\/([a-zA-Z0-9]+)/', $url, $matches)) {
-                $entity_type = $matches[1];
-                $entity_id = $matches[2];
-                $embed_url = "https://open.spotify.com/embed/{$entity_type}/{$entity_id}";
-                
-                $ch = curl_init($embed_url);
-                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
-                $html = curl_exec($ch);
-                curl_close($ch);
-                
-                if (preg_match('/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/s', $html, $script_matches)) {
-                    $json_data = json_decode($script_matches[1], true);
-                    $entity = $json_data['props']['pageProps']['state']['data']['entity'] ?? null;
+        try {
+            $url = $data['url'] ?? '';
+            $platform = strtolower($data['platform'] ?? 'spotify');
+            $media_mode = $data['media_mode'] ?? 'single';
+            
+            // AUTO-DETECT: Mendeteksi platform otomatis berdasarkan isi URL
+            if (strpos($url, 'spotify.com') !== false || strpos($url, 'spotify.link') !== false) {
+                $platform = 'spotify';
+            } elseif (strpos($url, 'youtube.com') !== false || strpos($url, 'youtu.be') !== false) {
+                $platform = 'youtube';
+            } elseif (strpos($url, 'tiktok.com') !== false) {
+                $platform = 'tiktok';
+            } elseif (strpos($url, 'instagram.com') !== false) {
+                $platform = 'instagram';
+            } elseif (strpos($url, 'facebook.com') !== false || strpos($url, 'fb.watch') !== false || strpos($url, 'fb.gg') !== false) {
+                $platform = 'facebook';
+            }
+
+            if ($platform === 'spotify') {
+                // Tangani shortlink Spotify (spotify.link)
+                if (strpos($url, 'spotify.link') !== false) {
+                    $ch = curl_init($url);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+                    $html = curl_exec($ch);
+                    $url = curl_getinfo($ch, CURLINFO_EFFECTIVE_URL);
+                    curl_close($ch);
+                }
+
+                if (preg_match('/(track|playlist|album)\/([a-zA-Z0-9]+)/', $url, $matches)) {
+                    $entity_type = $matches[1];
+                    $entity_id = $matches[2];
+                    $embed_url = "https://open.spotify.com/embed/{$entity_type}/{$entity_id}";
+                    
+                    $ch = curl_init($embed_url);
+                    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                    curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
+                    $html = curl_exec($ch);
+                    
+                    if (curl_errno($ch)) {
+                        throw new Exception('Gagal menghubungi server Spotify.');
+                    }
+                    curl_close($ch);
+                    
+                    $entity = null;
+                    if (preg_match('/<script id="__NEXT_DATA__" type="application\/json">(.*?)<\/script>/s', $html, $script_matches)) {
+                        $json_data = json_decode($script_matches[1], true);
+                        $entity = $json_data['props']['pageProps']['state']['data']['entity'] ?? null;
+                    }
                     
                     if (!$entity) {
-                        echo json_encode(['error' => 'Data lagu/playlist tidak ditemukan.']); exit;
+                        throw new Exception('Data lagu/playlist tidak ditemukan atau struktur API Spotify telah berubah.');
                     }
                     
                     $title = $entity['name'] ?? 'Unknown Title';
@@ -89,9 +123,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 'artist' => $t['subtitle'] ?? 'Unknown Artist',
                                 'duration' => "{$mins}:{$secs}",
                                 'img' => $cover_url,
-                                'url' => '' // Spotify url kosongan, akan dicari otomatis nanti
+                                'url' => '' // Spotify url kosongan, akan dicari via ytsearch saat unduh
                             ];
                         }
+                        
+                        if (empty($track_list)) {
+                             throw new Exception('Playlist kosong atau tidak terbaca.');
+                        }
+                        
                         echo json_encode([
                             'type' => 'playlist',
                             'title' => $title,
@@ -101,96 +140,113 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ]); exit;
                     }
                 } else {
-                    echo json_encode(['error' => 'Gagal mengekstrak data dari Spotify Embed.']); exit;
+                    throw new Exception('Tautan Spotify tidak valid. Pastikan ini adalah tautan lagu atau playlist.');
                 }
-            } else {
-                echo json_encode(['error' => 'Tautan Spotify tidak valid.']); exit;
-            }
-        } 
-        else {
-            // Untuk YouTube, Facebook, TikTok dll menggunakan yt-dlp
-            $cmd_opts = "--quiet --no-warnings -J ";
-            $cmd_opts .= ($media_mode === 'playlist') ? "--flat-playlist " : "--no-playlist ";
-            
-            $cmd = $yt_dlp_path . " --ffmpeg-location " . escapeshellarg(trim($ffmpeg_path, '"')) . " " . $cmd_opts . escapeshellarg($url);
-            
-            exec($cmd, $output, $return_var);
-            $result_str = implode("", $output);
-            $info = json_decode($result_str, true);
-            
-            if (!$info) {
-                echo json_encode(['error' => 'Gagal mengekstrak video. Pastikan tautan publik.']); exit;
-            }
-            
-            if ($media_mode === 'playlist' && isset($info['entries'])) {
-                $playlist_title = $info['title'] ?? 'YouTube Playlist';
-                $cover_url = isset($info['thumbnails']) ? end($info['thumbnails'])['url'] : 'https://placehold.co/600x600/121212/ffffff?text=Playlist';
+            } 
+            else {
+                // Untuk YouTube, Facebook, TikTok dll menggunakan yt-dlp
+                $cmd_opts = "--quiet --no-warnings -J ";
+                $cmd_opts .= ($media_mode === 'playlist') ? "--flat-playlist " : "--no-playlist ";
                 
-                $track_list = [];
-                foreach ($info['entries'] as $idx => $entry) {
-                    if (!$entry) continue;
-                    $dur = $entry['duration'] ?? 0;
-                    $mins = floor($dur / 60);
-                    $secs = str_pad($dur % 60, 2, '0', STR_PAD_LEFT);
-                    $dur_str = $dur ? "{$mins}:{$secs}" : "-:-";
-                    
-                    $t_thumb = isset($entry['thumbnails']) ? end($entry['thumbnails'])['url'] : $cover_url;
-                    $vid_id = $entry['id'] ?? "yt_{$idx}";
-                    
-                    $track_list[] = [
-                        'id' => $vid_id,
-                        'title' => $entry['title'] ?? 'Unknown Video',
-                        'artist' => $entry['uploader'] ?? ($entry['channel'] ?? 'Unknown Channel'),
-                        'duration' => $dur_str,
-                        'img' => $t_thumb,
-                        'url' => $entry['url'] ?? "https://www.youtube.com/watch?v={$vid_id}"
-                    ];
-                }
-                echo json_encode([
-                    'type' => 'playlist',
-                    'platform' => 'YouTube',
-                    'title' => $playlist_title,
-                    'cover' => $cover_url,
-                    'total' => count($track_list),
-                    'tracks' => $track_list
-                ]); exit;
-            } else {
-                $title = $info['title'] ?? 'Video Tanpa Judul';
-                $thumbnail = $info['thumbnail'] ?? '';
-                $dur = $info['duration'] ?? 0;
-                $mins = floor($dur / 60);
-                $secs = str_pad($dur % 60, 2, '0', STR_PAD_LEFT);
-                $duration_str = $dur ? "{$mins}:{$secs}" : ($info['duration_string'] ?? '-:-');
+                $cmd = $yt_dlp_path . " --ffmpeg-location " . escapeshellarg(trim($ffmpeg_path, '"')) . " " . $cmd_opts . escapeshellarg($url);
                 
-                $platform_display = ucfirst($platform);
+                $output = [];
+                exec($cmd . " 2>&1", $output, $return_var); // 2>&1 agar error log ikut tertangkap
+                $result_str = trim(implode("\n", $output));
+                $info = json_decode($result_str, true);
                 
-                $available_resolutions = [];
-                if (isset($info['formats'])) {
-                    foreach ($info['formats'] as $f) {
-                        if (isset($f['height']) && is_numeric($f['height']) && isset($f['vcodec']) && $f['vcodec'] !== 'none') {
-                            $available_resolutions[] = (int)$f['height'];
-                        }
+                if (!$info) {
+                    // yt-dlp sering mencetak log/peringatan sebelum JSON, cari awal kurawal JSON
+                    $json_start = strpos($result_str, '{');
+                    if ($json_start !== false) {
+                        $clean_json = substr($result_str, $json_start);
+                        $info = json_decode($clean_json, true);
                     }
                 }
-                $available_resolutions = array_unique($available_resolutions);
-                rsort($available_resolutions);
                 
-                $resolutions_list = [];
-                foreach ($available_resolutions as $res) {
-                    $resolutions_list[] = "{$res}p";
+                if (!$info) {
+                    // Tampilkan pesan asli yt-dlp agar ketahuan masalahnya (private, blokir wilayah, dll)
+                    $error_msg = substr($result_str, 0, 250);
+                    throw new Exception('Gagal ekstrak yt-dlp: ' . ($error_msg ?: 'Output kosong.'));
                 }
-                if (empty($resolutions_list)) $resolutions_list = ["best"];
                 
-                echo json_encode([
-                    'type' => 'video',
-                    'platform' => $platform_display,
-                    'title' => $title,
-                    'thumbnail' => $thumbnail,
-                    'duration' => $duration_str,
-                    'url' => $url,
-                    'resolutions' => $resolutions_list
-                ]); exit;
+                // Menangani mode Playlist
+                if ((isset($info['_type']) && $info['_type'] === 'playlist') || (isset($info['entries']) && $media_mode === 'playlist')) {
+                    $playlist_title = $info['title'] ?? 'Playlist';
+                    $cover_url = isset($info['thumbnails']) ? end($info['thumbnails'])['url'] : 'https://placehold.co/600x600/121212/ffffff?text=Playlist';
+                    
+                    $track_list = [];
+                    foreach ($info['entries'] as $idx => $entry) {
+                        if (!$entry) continue;
+                        $dur = $entry['duration'] ?? 0;
+                        $mins = floor($dur / 60);
+                        $secs = str_pad($dur % 60, 2, '0', STR_PAD_LEFT);
+                        $dur_str = $dur ? "{$mins}:{$secs}" : "-:-";
+                        
+                        $t_thumb = isset($entry['thumbnails']) ? end($entry['thumbnails'])['url'] : $cover_url;
+                        $vid_id = $entry['id'] ?? "vid_{$idx}";
+                        
+                        $track_list[] = [
+                            'id' => $vid_id,
+                            'title' => $entry['title'] ?? 'Unknown Video',
+                            'artist' => $entry['uploader'] ?? ($entry['channel'] ?? 'Unknown Channel'),
+                            'duration' => $dur_str,
+                            'img' => $t_thumb,
+                            'url' => $entry['url'] ?? $url 
+                        ];
+                    }
+                    echo json_encode([
+                        'type' => 'playlist',
+                        'platform' => ucfirst($platform),
+                        'title' => $playlist_title,
+                        'cover' => $cover_url,
+                        'total' => count($track_list),
+                        'tracks' => $track_list
+                    ]); exit;
+                } 
+                // Menangani mode Single Video
+                else {
+                    $title = $info['title'] ?? 'Video Tanpa Judul';
+                    $thumbnail = $info['thumbnail'] ?? '';
+                    $dur = $info['duration'] ?? 0;
+                    $mins = floor($dur / 60);
+                    $secs = str_pad($dur % 60, 2, '0', STR_PAD_LEFT);
+                    $duration_str = $dur ? "{$mins}:{$secs}" : ($info['duration_string'] ?? '-:-');
+                    
+                    $platform_display = ucfirst($platform);
+                    
+                    $available_resolutions = [];
+                    if (isset($info['formats'])) {
+                        foreach ($info['formats'] as $f) {
+                            if (isset($f['height']) && is_numeric($f['height']) && isset($f['vcodec']) && $f['vcodec'] !== 'none') {
+                                $available_resolutions[] = (int)$f['height'];
+                            }
+                        }
+                    }
+                    $available_resolutions = array_unique($available_resolutions);
+                    rsort($available_resolutions);
+                    
+                    $resolutions_list = [];
+                    foreach ($available_resolutions as $res) {
+                        $resolutions_list[] = "{$res}p";
+                    }
+                    if (empty($resolutions_list)) $resolutions_list = ["best"];
+                    
+                    echo json_encode([
+                        'type' => 'video',
+                        'platform' => $platform_display,
+                        'title' => $title,
+                        'thumbnail' => $thumbnail,
+                        'duration' => $duration_str,
+                        'url' => $url,
+                        'resolutions' => $resolutions_list
+                    ]); exit;
+                }
             }
+        } catch (Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['error' => $e->getMessage()]);
+            exit;
         }
     }
     
@@ -198,85 +254,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // ENDPOINT: /download
     // --------------------------------------------------------------------------
     if ($action === 'download') {
-        set_time_limit(0); // Mencegah timeout saat mendownload file besar
+        set_time_limit(0); 
+        ini_set('display_errors', 0);
         
-        $mode = $data['mode'] ?? 'spotify';
-        $format_type = strtolower($data['format'] ?? ($data['audio_format'] ?? 'mp4'));
-        $temp_id = bin2hex(random_bytes(4));
-        $temp_base = "temp/temp_media_{$temp_id}";
-        
-        $ffmpeg_arg = " --ffmpeg-location " . escapeshellarg(trim($ffmpeg_path, '"')) . " ";
-        $cmd = $yt_dlp_path . $ffmpeg_arg . "--quiet --no-playlist ";
-        
-        if ($mode === 'spotify') {
-            $track_name = $data['track_name'] ?? 'Unknown';
-            $artist_name = $data['artist_name'] ?? 'Unknown';
-            $search_query = "{$track_name} {$artist_name} audio";
-            $download_name = "{$track_name} - {$artist_name}.{$format_type}";
+        try {
+            $mode = $data['mode'] ?? 'spotify';
+            $format_type = strtolower($data['format'] ?? ($data['audio_format'] ?? 'mp4'));
+            $temp_id = bin2hex(random_bytes(4));
+            $temp_base = "temp/temp_media_{$temp_id}";
             
-            $cmd .= "-x --audio-format {$format_type} ";
-            if ($format_type === 'mp3') {
-                $cmd .= "--audio-quality 192K ";
-            }
-            $cmd .= "--parse-metadata \"title:%(title)s\" --parse-metadata \"artist:%(artist)s\" ";
-            $cmd .= "-o " . escapeshellarg($temp_base . ".%(ext)s") . " " . escapeshellarg("ytsearch1:{$search_query}");
+            $ffmpeg_arg = " --ffmpeg-location " . escapeshellarg(trim($ffmpeg_path, '"')) . " ";
+            $cmd = $yt_dlp_path . $ffmpeg_arg . "--quiet --no-playlist ";
             
-        } else {
-            // Direct mode (YouTube dll)
-            $url = $data['url'] ?? '';
-            $title = $data['title'] ?? 'Video';
-            $resolution = $data['resolution'] ?? 'best';
-            $audio_quality = $data['audio_quality'] ?? '192';
-            
-            $clean_title = preg_replace('/[^a-zA-Z0-9 \-_]/', '', $title);
-            if (empty(trim($clean_title))) $clean_title = "Download";
-            $download_name = "{$clean_title}.{$format_type}";
-            
-            if ($format_type === 'mp3' || $format_type === 'flac') {
+            if ($mode === 'spotify') {
+                $track_name = $data['track_name'] ?? 'Unknown';
+                $artist_name = $data['artist_name'] ?? 'Unknown';
+                $search_query = "{$track_name} {$artist_name} audio";
+                $download_name = "{$track_name} - {$artist_name}.{$format_type}";
+                
                 $cmd .= "-x --audio-format {$format_type} ";
-                if ($format_type === 'mp3') $cmd .= "--audio-quality {$audio_quality}K ";
-            } else {
-                // MEMAKSA CODEC H.264 (avc1) AGAR SUPPORT WA/IG
-                $cmd .= "--merge-output-format mp4 ";
-                if ($resolution !== 'best') {
-                    $res_int = str_replace('p', '', $resolution);
-                    $cmd .= "-f \"bestvideo[height<={$res_int}][vcodec^=avc1][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<={$res_int}][ext=mp4]+bestaudio[ext=m4a]/best\" ";
-                } else {
-                    $cmd .= "-f \"bestvideo[vcodec^=avc1][ext=mp4]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best\" ";
+                if ($format_type === 'mp3') {
+                    $cmd .= "--audio-quality 192K ";
                 }
+                $cmd .= "--parse-metadata \"title:%(title)s\" --parse-metadata \"artist:%(artist)s\" ";
+                $cmd .= "-o " . escapeshellarg($temp_base . ".%(ext)s") . " " . escapeshellarg("ytsearch1:{$search_query}");
+                
+            } else {
+                // Direct mode (YouTube, TikTok, dll)
+                $url = $data['url'] ?? '';
+                $title = $data['title'] ?? 'Media';
+                $resolution = $data['resolution'] ?? 'best';
+                $audio_quality = $data['audio_quality'] ?? '192';
+                
+                $clean_title = preg_replace('/[^a-zA-Z0-9 \-_]/', '', $title);
+                if (empty(trim($clean_title))) $clean_title = "Download";
+                $download_name = "{$clean_title}.{$format_type}";
+                
+                if ($format_type === 'mp3' || $format_type === 'flac') {
+                    $cmd .= "-x --audio-format {$format_type} ";
+                    if ($format_type === 'mp3') $cmd .= "--audio-quality {$audio_quality}K ";
+                } else {
+                    $cmd .= "--merge-output-format mp4 ";
+                    // FIX: '/best' di bagian akhir digunakan sebagai fallback untuk Tiktok dll.
+                    if ($resolution !== 'best') {
+                        $res_int = str_replace('p', '', $resolution);
+                        $cmd .= "-f \"bestvideo[height<={$res_int}][vcodec^=avc1][ext=mp4]+bestaudio[ext=m4a]/bestvideo[height<={$res_int}][ext=mp4]+bestaudio[ext=m4a]/best\" ";
+                    } else {
+                        $cmd .= "-f \"bestvideo[vcodec^=avc1][ext=mp4]+bestaudio[ext=m4a]/bestvideo[ext=mp4]+bestaudio[ext=m4a]/best\" ";
+                    }
+                }
+                $cmd .= "-o " . escapeshellarg($temp_base . ".%(ext)s") . " " . escapeshellarg($url);
             }
-            $cmd .= "-o " . escapeshellarg($temp_base . ".%(ext)s") . " " . escapeshellarg($url);
-        }
-        
-        // Eksekusi Download
-        exec($cmd, $output, $return_var);
-        
-        // Cari file yang dihasilkan
-        $downloaded_file = null;
-        $files = glob($temp_base . ".*");
-        if (count($files) > 0) {
-            $downloaded_file = $files[0];
-        }
-        
-        if ($downloaded_file && file_exists($downloaded_file)) {
-            // Bersihkan output buffer
-            if (ob_get_level()) ob_end_clean();
             
-            header('Content-Description: File Transfer');
-            header('Content-Type: application/octet-stream');
-            header('Content-Disposition: attachment; filename="' . basename($download_name) . '"');
-            header('Expires: 0');
-            header('Cache-Control: must-revalidate');
-            header('Pragma: public');
-            header('Content-Length: ' . filesize($downloaded_file));
+            // Eksekusi Download
+            $output = [];
+            exec($cmd . " 2>&1", $output, $return_var);
             
-            // Kirim file lalu hapus dari server
-            readfile($downloaded_file);
-            @unlink($downloaded_file);
-            exit;
-        } else {
+            // Cari file yang dihasilkan
+            $downloaded_file = null;
+            $files = glob($temp_base . ".*");
+            if (count($files) > 0) {
+                $downloaded_file = $files[0];
+            }
+            
+            if ($downloaded_file && file_exists($downloaded_file)) {
+                if (ob_get_level()) ob_end_clean();
+                
+                header('Content-Description: File Transfer');
+                header('Content-Type: application/octet-stream');
+                header('Content-Disposition: attachment; filename="' . basename($download_name) . '"');
+                header('Expires: 0');
+                header('Cache-Control: must-revalidate');
+                header('Pragma: public');
+                header('Content-Length: ' . filesize($downloaded_file));
+                
+                readfile($downloaded_file);
+                @unlink($downloaded_file);
+                exit;
+            } else {
+                $error_msg = trim(implode("\n", $output));
+                throw new Exception('Gagal mendownload. yt-dlp log: ' . substr($error_msg, 0, 200));
+            }
+        } catch (Throwable $e) {
             http_response_code(500);
-            echo json_encode(['error' => 'Gagal mendownload file dari server.']);
+            echo json_encode(['error' => $e->getMessage()]);
             exit;
         }
     }
@@ -291,7 +352,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>All-in-One Downloader Ultimate</title>
-	<link href="img/logo.png" rel="icon">
+		<link href="img/logo.png" rel="icon">
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -352,20 +413,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 <div class="flex flex-wrap justify-center gap-2 mb-8" id="platformSelector">
                     <button onclick="setPlatform('spotify', this, '#1DB954')" class="platform-btn bg-[#1DB954] text-black px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"><i data-lucide="music"></i> Spotify</button>
-                    <button onclick="setPlatform('youtube', this, '#FF0000')" class="platform-btn bg-white/10 text-white hover:bg-white/20 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"><i data-lucide="youtube"></i> YouTube</button>
-                    <button onclick="setPlatform('facebook', this, '#1877F2')" class="platform-btn bg-white/10 text-white hover:bg-white/20 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"><i data-lucide="facebook"></i> Facebook</button>
-                    <button onclick="setPlatform('instagram', this, '#E1306C')" class="platform-btn bg-white/10 text-white hover:bg-white/20 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"><i data-lucide="instagram"></i> Instagram</button>
+                    <!-- Menggunakan ikon dasar Lucide agar console bebas dari warning pink missing icon -->
+                    <button onclick="setPlatform('youtube', this, '#FF0000')" class="platform-btn bg-white/10 text-white hover:bg-white/20 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"><i data-lucide="play-circle"></i> YouTube</button>
+                    <button onclick="setPlatform('facebook', this, '#1877F2')" class="platform-btn bg-white/10 text-white hover:bg-white/20 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"><i data-lucide="share-2"></i> Facebook</button>
+                    <button onclick="setPlatform('instagram', this, '#E1306C')" class="platform-btn bg-white/10 text-white hover:bg-white/20 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"><i data-lucide="camera"></i> Instagram</button>
                     <button onclick="setPlatform('tiktok', this, '#00f2fe')" class="platform-btn bg-white/10 text-white hover:bg-white/20 px-4 py-2 rounded-full font-bold text-sm flex items-center gap-2 transition-transform active:scale-95"><i data-lucide="smartphone"></i> TikTok</button>
                 </div>
 
                 <h1 class="text-4xl md:text-5xl font-extrabold mb-4 tracking-tight" id="heroTitle">
-                    Unduh <span class="text-brand">Media</span> Gratis
+                    Unduh <span class="text-brand">Spotify</span> Gratis
                 </h1>
                 
                 <div class="bg-brand-card p-2 md:p-3 rounded-2xl md:rounded-full border border-white/10 shadow-2xl flex flex-col md:flex-row gap-2 mt-8">
                     <div class="flex-grow flex items-center px-4 py-3 md:py-2 relative">
                         <i data-lucide="link" class="w-5 h-5 text-brand-text mr-3 shrink-0"></i>
-                        <input type="text" id="urlInput" placeholder="Tempel URL di sini..." class="w-full bg-transparent border-none outline-none text-white text-sm md:text-base pr-10">
+                        <input type="text" id="urlInput" placeholder="Tempel URL Spotify di sini..." class="w-full bg-transparent border-none outline-none text-white text-sm md:text-base pr-10">
                         <button onclick="pasteFromClipboard()" class="absolute right-4 text-brand-text hover:text-white transition-colors" title="Paste Link">
                             <i data-lucide="clipboard-paste" class="w-5 h-5"></i>
                         </button>
@@ -458,7 +520,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="z-10 text-center sm:text-left flex-grow">
                             <span id="playlistTypeBadge" class="text-xs font-bold uppercase tracking-wider text-brand mb-2">Playlist Resmi Ditemukan</span>
                             <h2 id="playlistTitle" class="text-3xl md:text-4xl font-extrabold tracking-tight mb-2 line-clamp-2">Nama Playlist</h2>
-                            <p class="text-brand-text text-sm mb-4"><span id="playlistTrackCount">0</span> lagu berhasil dimuat ke dalam antrean</p>
+                            <p class="text-brand-text text-sm mb-4"><span id="playlistTrackCount">0</span> media berhasil dimuat ke dalam antrean</p>
                             
                             <div class="flex flex-col sm:flex-row gap-2 items-center mx-auto sm:mx-0 w-full sm:w-auto">
                                 <select id="playlistVideoQuality" class="hidden bg-black/50 border border-white/10 rounded-full px-4 py-2.5 text-sm font-bold text-white focus:outline-none focus:border-brand cursor-pointer shadow-lg w-full sm:w-auto">
@@ -486,7 +548,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="flex flex-col md:flex-row justify-between items-center gap-4 px-4 py-4 border-b border-white/5">
                             <div class="relative w-full md:w-1/2">
                                 <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-brand-text"></i>
-                                <input type="text" id="playlistSearch" oninput="handlePlaylistSearch(this.value)" placeholder="Cari lagu atau artis dalam playlist..." class="w-full bg-black/50 border border-white/10 rounded-lg py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-brand transition-colors">
+                                <input type="text" id="playlistSearch" oninput="handlePlaylistSearch(this.value)" placeholder="Cari media atau artis dalam antrean..." class="w-full bg-black/50 border border-white/10 rounded-lg py-2 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-brand transition-colors">
                             </div>
                             <div class="flex items-center gap-2 w-full md:w-auto justify-end">
                                 <span class="text-xs text-brand-text">Tampilkan:</span>
@@ -531,7 +593,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         let currentPage = 1;
         let itemsPerPage = 10;
 
-        // Path PHP dinamis berdasarkan parameter ?action=
         const API_BASE_URL = '?action=';
 
         const platformThemes = {
@@ -634,7 +695,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 });
 
                 const data = await response.json();
-                if (!response.ok) throw new Error(data.error || "Gagal menghubungi server backend.");
+                // Check if server returned an explicit error JSON via our try..catch block
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || "Gagal menghubungi server backend.");
+                }
 
                 loader.classList.add('hidden'); loader.classList.remove('flex');
 
@@ -653,6 +717,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if(data.platform === 'YouTube') {
                         badge.innerText = "YouTube Playlist";
                         badge.style.color = "#FF0000";
+                    } else if(data.platform === 'Tiktok') {
+                        badge.innerText = "TikTok Account / Sounds";
+                        badge.style.color = "#00f2fe";
                     } else {
                         badge.innerText = "Spotify Playlist";
                         badge.style.color = "#1DB954";
@@ -668,7 +735,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     document.getElementById('itemsPerPage').value = '10';
                     itemsPerPage = 10;
                     
-                    if(data.platform === 'YouTube') {
+                    // Show MP4 option for platforms other than Spotify
+                    if(data.platform !== 'Spotify') {
                         document.getElementById('playlistVideoQuality').classList.remove('hidden');
                         document.getElementById('btnDownloadSelectedMp4').classList.remove('hidden');
                         document.getElementById('playlistGridHeader').className = "grid grid-cols-[30px_30px_minmax(100px,1fr)_auto] md:grid-cols-[40px_40px_minmax(150px,1fr)_80px_auto] gap-2 md:gap-4 px-4 py-3 border-b border-white/5 text-brand-text text-xs font-semibold uppercase tracking-wider items-center";
@@ -688,9 +756,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     document.getElementById('videoDuration').innerText = data.duration || '-:-';
                     
                     const badge = document.getElementById('videoPlatformBadge');
-                    badge.innerText = `${data.platform} Video`;
-                    badge.style.backgroundColor = platformThemes[data.platform.toLowerCase()].color;
-                    badge.style.color = platformThemes[data.platform.toLowerCase()].text;
+                    badge.innerText = `${data.platform} Media`;
+                    badge.style.backgroundColor = platformThemes[data.platform.toLowerCase()]?.color || '#333';
+                    badge.style.color = platformThemes[data.platform.toLowerCase()]?.text || '#fff';
 
                     const resSelect = document.getElementById('videoResolutionSelect');
                     resSelect.innerHTML = '';
@@ -737,7 +805,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     const actualIndex = startIndex + index;
                     const safeId = (track.id && track.id !== 'unknown') ? track.id : 'track_' + actualIndex;
                     
-                    const isYT = currentPlatform === 'youtube';
+                    const isYT = document.getElementById('playlistVideoQuality').classList.contains('hidden') === false;
                     const gridClass = isYT 
                         ? "grid grid-cols-[30px_30px_minmax(100px,1fr)_auto] md:grid-cols-[40px_40px_minmax(150px,1fr)_80px_auto] gap-2 md:gap-4 px-4 py-3 hover:bg-white/5 border-b border-white/5 items-center transition-colors"
                         : "grid grid-cols-[30px_30px_minmax(120px,1fr)_90px] md:grid-cols-[40px_40px_minmax(150px,1fr)_minmax(100px,150px)_120px] gap-2 md:gap-4 px-4 py-3 hover:bg-white/5 border-b border-white/5 items-center transition-colors";
@@ -985,7 +1053,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         body: JSON.stringify(payload)
                     });
 
-                    if (!response.ok) throw new Error('Gagal dari server');
+                    if (!response.ok) {
+                        const errData = await response.json().catch(()=>({}));
+                        throw new Error(errData.error || 'Gagal dari server');
+                    }
 
                     const blob = await response.blob();
                     const urlObj = window.URL.createObjectURL(blob);
@@ -1008,6 +1079,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     spanText.innerHTML = `<i data-lucide="x" class="w-4 h-4"></i>`;
                     btn.classList.replace('bg-yellow-500', 'bg-red-500');
                     btn.classList.replace('hover:bg-yellow-400', 'hover:bg-red-400');
+                    if(!isFromQueue) alert("Gagal mengunduh: " + error.message);
                 } finally {
                     lucide.createIcons();
                     setTimeout(() => { 
@@ -1061,7 +1133,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     })
                 });
 
-                if (!response.ok) throw new Error('Gagal mengunduh dari server');
+                if (!response.ok) {
+                    const errData = await response.json().catch(()=>({}));
+                    throw new Error(errData.error || 'Gagal mengunduh dari server');
+                }
 
                 const blob = await response.blob();
                 const urlObj = window.URL.createObjectURL(blob);
